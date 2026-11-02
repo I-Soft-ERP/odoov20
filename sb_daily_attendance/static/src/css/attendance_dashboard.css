@@ -1,0 +1,83 @@
+/* Sambros Attendance: native Odoo 19 Kanban cards */
+.sb_attendance_dashboard .o_kanban_record {border:0!important; background:transparent!important; padding:0!important; box-shadow:none!important;}
+.sb_attendance_dashboard .o_kanban_renderer {gap:16px;}
+.sb_team_card {border:1px solid #e1e6ef; border-radius:13px; overflow:hidden; background:#fff; box-shadow:0 4px 15px rgba(32,45,70,.08); min-width:285px;}
+.sb_team_header {display:flex;justify-content:space-between;gap:10px;align-items:flex-start;padding:18px 15px;background:linear-gradient(110deg,#e7f2ff,#f0f5ff);}
+.sb_team_name {font-weight:750;font-size:1.16rem;color:#172743;}
+.sb_team_foreman {font-size:.82rem;color:#4c6077;margin-top:4px;}
+.sb_state_pill {white-space:nowrap;border-radius:30px;background:#d9eaff;color:#19539b;padding:5px 10px;font-size:.77rem;font-weight:700;}
+.sb_status_final .sb_team_header {background:linear-gradient(110deg,#d8f4e8,#effaf4);}
+.sb_status_final .sb_state_pill {background:#c2edda;color:#146b4c;}
+.sb_status_submitted .sb_team_header {background:linear-gradient(110deg,#dbeafe,#eef4ff);}
+.sb_status_closing .sb_team_header,.sb_status_draft .sb_team_header {background:linear-gradient(110deg,#fff0cb,#fff9e9);}
+.sb_status_closing .sb_state_pill,.sb_status_draft .sb_state_pill {background:#ffe1a1;color:#83510c;}
+.sb_status_missing .sb_team_header {background:linear-gradient(110deg,#ffe0e2,#fff1f2);}
+.sb_status_missing .sb_state_pill {background:#ffd0d4;color:#a92135;}
+.sb_team_body {padding:15px;}
+.sb_attendance_metrics {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:13px;}
+.sb_metric {padding:10px 8px;border-radius:10px;display:flex;flex-direction:column;gap:3px;}
+.sb_metric span {font-size:.77rem;}
+.sb_metric strong {font-size:1.35rem;line-height:1.1;}
+.sb_metric_present {background:#e7f8f0;color:#16784f;}
+.sb_metric_absent {background:#fff0f0;color:#bb3440;}
+.sb_metric_prevented {background:#fff5e5;color:#9a6416;}
+.sb_overtime_row {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+.sb_ot_approved,.sb_ot_pending {display:flex;flex-direction:column;gap:5px;border-radius:10px;padding:12px 10px;}
+.sb_ot_approved {background:#f0eaff;color:#5834a2;}
+.sb_ot_pending {background:#fff2dc;color:#95500a;}
+.sb_ot_approved span,.sb_ot_pending span {font-size:.78rem;font-weight:600;}
+.sb_ot_approved strong,.sb_ot_pending strong {font-size:1.25rem;}
+.sb_missing_alert {margin-top:12px;background:#fff0f1;border:1px solid #ffcbd0;color:#a52a38;border-radius:8px;padding:8px;font-size:.83rem;font-weight:650;}
+.sb_ot_note {font-size:.75rem;color:#7c8797;margin-top:8px;}
+.sb_team_footer {border-top:1px solid #edf0f5;margin-top:14px;padding-top:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;}
+.sb_team_footer small {color:#65768b;}
+@media(max-width:600px){.sb_attendance_dashboard .o_kanban_record {width:100%!important;}.sb_team_card {min-width:0;}}
+
+/* 19.0.1.0.31 — compact operational cards and actionable OT warning */
+.sb_team_header {padding:13px 14px;}
+.sb_team_body {padding:12px 14px;}
+.sb_attendance_metrics {margin-bottom:9px;gap:7px;}
+.sb_metric {padding:8px 9px;gap:2px;}
+.sb_metric strong {font-size:1.22rem;}
+.sb_ot_approved,.sb_ot_pending {padding:9px 10px;gap:3px;}
+.sb_ot_approved strong,.sb_ot_pending strong {font-size:1.14rem;}
+.sb_team_footer {margin-top:10px;padding-top:10px;}
+.sb_ot_attention {box-shadow:inset 0 0 0 1px #f4c37b;}
+.sb_approval_alert {display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:10px;border:1px solid #f1c47e;background:#fff6e7;color:#985008;border-radius:8px;padding:8px 10px;font-weight:700;font-size:.79rem;}
+.sb_review_btn {background:#a75c0c!important;border-color:#a75c0c!important;color:#fff!important;font-weight:650!important;}
+.sb_review_btn:hover {background:#874908!important;color:#fff!important;}
+
+/* 19.0.1.0.33 — consolidated management strip, using existing team snapshot fields */
+.sb_management_summary {padding:14px 16px 4px;width:100%;flex:0 0 100%;}
+.sb_summary_heading {display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:12px;flex-wrap:wrap;}
+.sb_summary_heading strong {font-size:1.1rem;color:#172743;}
+.sb_summary_heading span {font-size:.78rem;color:#69788a;}
+.sb_summary_tiles {display:grid;grid-template-columns:repeat(7,minmax(130px,1fr));gap:10px;}
+.sb_summary_tile {border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:5px;border:1px solid rgba(20,30,55,.07);}
+.sb_summary_tile span {font-size:.78rem;font-weight:600;}
+.sb_summary_tile strong {font-size:1.35rem;white-space:nowrap;}
+.sb_summary_teams {background:#e9f2ff;color:#215b9c;}
+.sb_summary_present {background:#e7f8f0;color:#16784f;}
+.sb_summary_absent {background:#fff0f0;color:#bb3440;}
+.sb_summary_prevented {background:#fff5e5;color:#9a6416;}
+.sb_summary_approved {background:#f0eaff;color:#5834a2;}
+.sb_summary_pending {background:#fff2dc;color:#95500a;}
+.sb_summary_outstanding {background:#ffe7e8;color:#a52a38;}
+@media(max-width:1200px){.sb_summary_tiles {grid-template-columns:repeat(4,minmax(120px,1fr));}}
+@media(max-width:700px){.sb_summary_tiles {grid-template-columns:repeat(2,minmax(0,1fr));}.sb_management_summary {padding:10px;}}
+
+/* Date navigation: the selected day is propagated through the dashboard action context. */
+.sb_dashboard_date_controls {display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
+.sb_dashboard_date_input {width:155px;min-width:140px;}
+.sb_dashboard_date_controls .btn {min-height:31px;}
+
+/* Selected attendance date: visible independently of browser date-input rendering. */
+.sb_dashboard_heading { display: flex; flex-direction: column; gap: 2px; }
+.sb_dashboard_selected_date { font-size: 0.9rem; font-weight: 500; color: #52647a; }
+.sb_dashboard_date_input { min-width: 155px; }
+
+/* 19.0.1.0.37 — manual HR WhatsApp summary and 10:00 operational cutoff */
+.sb_whatsapp_actions {display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:0 0 12px;}
+.sb_whatsapp_cutoff {color:#9a520d;background:#fff2dc;border:1px solid #f0cf92;border-radius:8px;padding:7px 10px;font-size:.84rem;font-weight:650;}
+.sb_whatsapp_note {color:#66768a;font-size:.8rem;}
+.sb_whatsapp_copy {font-weight:650;white-space:nowrap;}

@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <record id="paperformat_weekly_attendance" model="report.paperformat">
+    <field name="name">Sambros Weekly Attendance A4 Landscape</field>
+    <field name="default" eval="False"/>
+    <field name="format">A4</field>
+    <field name="orientation">Landscape</field>
+    <field name="margin_top">23</field>
+    <field name="margin_bottom">10</field>
+    <field name="margin_left">10</field>
+    <field name="margin_right">10</field>
+    <field name="header_line" eval="False"/>
+    <field name="header_spacing">4</field>
+    <field name="dpi">90</field>
+  </record>
+  <record id="action_report_weekly_attendance" model="ir.actions.report">
+    <field name="name">Weekly Attendance Summary</field>
+    <field name="model">sb.attendance.weekly.summary</field>
+    <field name="report_type">qweb-pdf</field>
+    <field name="report_name">sb_daily_attendance.report_weekly_attendance_document</field>
+    <field name="paperformat_id" ref="sb_daily_attendance.paperformat_weekly_attendance"/>
+    <field name="print_report_name">'Sambros_Weekly_Attendance_%s' % object.date_from</field>
+  </record>
+  <template id="report_weekly_attendance_document">
+    <t t-call="web.html_container">
+      <t t-foreach="docs" t-as="doc">
+        <t t-set="company" t-value="doc.company_id"/>
+        <div class="header" style="font-family:Arial,Helvetica,sans-serif;">
+          <table style="width:100%;border-collapse:collapse;border:0;border-bottom:1px solid #cfd5d9;">
+            <tr>
+              <td style="width:35%;border:0;padding:0 0 5px 0;vertical-align:middle;">
+                <img t-if="company.logo" t-att-src="image_data_uri(company.logo)" style="max-width:170px;max-height:52px;" alt="Sambros"/>
+                <strong t-else="" style="font-size:17px;color:#202c33;">SAMBROS</strong>
+              </td>
+              <td style="border:0;text-align:right;vertical-align:middle;padding:0 0 5px 0;font-size:10px;color:#58626a;">WEEKLY ATTENDANCE SUMMARY</td>
+            </tr>
+          </table>
+        </div>
+        <div class="article" t-att-data-oe-model="doc._name" t-att-data-oe-id="doc.id">
+          <div class="page" style="font-family:Arial,Helvetica,sans-serif;color:#202c33;font-size:9px;">
+            <div style="background:#202c33;color:white;border-left:5px solid #df0015;padding:8px 11px;font-size:14px;font-weight:bold;margin:0 0 10px 0;">WEEKLY ATTENDANCE SUMMARY</div>
+            <table style="width:100%;border-collapse:collapse;margin-bottom:9px;font-size:9px;">
+              <tr><td style="width:16%;background:#e5e9ec;border:1px solid #cbd2d7;padding:6px;font-weight:bold;">Reporting period</td>
+              <td style="width:35%;border:1px solid #cbd2d7;padding:6px;"><span t-field="doc.date_from"/> – <span t-field="doc.date_to"/></td>
+              <td style="width:12%;background:#e5e9ec;border:1px solid #cbd2d7;padding:6px;font-weight:bold;">Team</td>
+              <td style="border:1px solid #cbd2d7;padding:6px;"><span t-if="doc.team_id" t-field="doc.team_id"/><span t-else="">All teams</span></td></tr>
+            </table>
+            <div t-if="doc.pending_count" style="border-left:4px solid #df0015;background:#fff0f0;padding:6px 9px;margin-bottom:9px;font-weight:bold;">PROVISIONAL — <span t-esc="doc.pending_count"/> outstanding register(s). Recorded hours include submitted and finalised registers only.</div>
+            <div t-if="not doc.pending_count" style="border-left:4px solid #202c33;background:#f0f2f3;padding:6px 9px;margin-bottom:9px;">No outstanding registers identified. Figures are based on submitted and finalised registers.</div>
+            <div style="background:#202c33;color:white;border-left:4px solid #df0015;padding:6px 9px;font-weight:bold;margin-bottom:6px;">EMPLOYEE ATTENDANCE BY TEAM</div>
+            <t t-set="teams" t-value="doc.line_ids.mapped('team_id')"/>
+            <t t-foreach="teams" t-as="team">
+              <t t-set="team_lines" t-value="doc.line_ids.filtered(lambda l: l.team_id.id == team.id)"/>
+              <div style="page-break-inside:avoid;background:#e5e9ec;border-left:3px solid #df0015;padding:5px 8px;margin:7px 0 3px;font-weight:bold;font-size:10px;"><span t-field="team.name"/></div>
+              <table style="width:100%;border-collapse:collapse;table-layout:fixed;font-size:8px;margin-bottom:4px;">
+                <thead style="display:table-header-group;"><tr style="background:#e5e9ec;color:#202c33;">
+                  <th style="width:18%;border:1px solid #cbd2d7;padding:5px;text-align:left;">Employee</th>
+                  <th style="width:6%;border:1px solid #cbd2d7;padding:5px 2px;">Mon</th><th style="width:6%;border:1px solid #cbd2d7;padding:5px 2px;">Tue</th><th style="width:6%;border:1px solid #cbd2d7;padding:5px 2px;">Wed</th><th style="width:6%;border:1px solid #cbd2d7;padding:5px 2px;">Thu</th><th style="width:6%;border:1px solid #cbd2d7;padding:5px 2px;">Fri</th><th style="width:6%;border:1px solid #cbd2d7;padding:5px 2px;">Sat</th><th style="width:6%;border:1px solid #cbd2d7;padding:5px 2px;">Sun</th><th style="width:7%;border:1px solid #cbd2d7;padding:5px 2px;">Absent</th><th style="width:7%;border:1px solid #cbd2d7;padding:5px 2px;text-align:right;">Net h</th><th style="width:8%;border:1px solid #cbd2d7;padding:4px 2px;">OT 1.5×</th><th style="width:8%;border:1px solid #cbd2d7;padding:4px 2px;">OT 2.0×</th><th style="width:8%;border:1px solid #cbd2d7;padding:4px 2px;">Total OT</th>
+                </tr></thead><tbody>
+                  <tr t-foreach="team_lines" t-as="line" t-att-style="'background:#fff1f1;' if line.absent_days else ('background:#f6f7f8;' if line_index % 2 else 'background:#ffffff;')">
+                    <td style="border:1px solid #d9dfe2;padding:4px 5px;"><span t-field="line.employee_id"/></td>
+                    <td style="border:1px solid #d9dfe2;padding:4px 2px;text-align:center;vertical-align:middle;">
+                      <t t-set="ot_cell" t-value="doc._overtime_cell(line.employee_id.id, 0)"/>
+                      <span t-field="line.day_0"/>
+                      <span t-if="ot_cell" t-att-style="'display:inline-block;font-size:8px;font-weight:bold;margin-left:3px;padding:2px 3px;background:' + ('#fff0d6' if ot_cell['category'] == 'holiday' else '#f1e8fa' if ot_cell['category'] == 'sunday' else '#e5f2fa') + ';color:#202c33;'">
+                        <span t-esc="'PH' if ot_cell['category'] == 'holiday' else '2.0x' if ot_cell['category'] == 'sunday' else '1.5x'"/>
+                        <span t-esc="' %.2fh' % ot_cell['candidate']"/>
+                        
+                      </span>
+                    </td>
+                    <td style="border:1px solid #d9dfe2;padding:4px 2px;text-align:center;vertical-align:middle;">
+                      <t t-set="ot_cell" t-value="doc._overtime_cell(line.employee_id.id, 1)"/>
+                      <span t-field="line.day_1"/>
+                      <span t-if="ot_cell" t-att-style="'display:inline-block;font-size:8px;font-weight:bold;margin-left:3px;padding:2px 3px;background:' + ('#fff0d6' if ot_cell['category'] == 'holiday' else '#f1e8fa' if ot_cell['category'] == 'sunday' else '#e5f2fa') + ';color:#202c33;'">
+                        <span t-esc="'PH' if ot_cell['category'] == 'holiday' else '2.0x' if ot_cell['category'] == 'sunday' else '1.5x'"/>
+                        <span t-esc="' %.2fh' % ot_cell['candidate']"/>
+                        
+                      </span>
+                    </td>
+                    <td style="border:1px solid #d9dfe2;padding:4px 2px;text-align:center;vertical-align:middle;">
+                      <t t-set="ot_cell" t-value="doc._overtime_cell(line.employee_id.id, 2)"/>
+                      <span t-field="line.day_2"/>
+                      <span t-if="ot_cell" t-att-style="'display:inline-block;font-size:8px;font-weight:bold;margin-left:3px;padding:2px 3px;background:' + ('#fff0d6' if ot_cell['category'] == 'holiday' else '#f1e8fa' if ot_cell['category'] == 'sunday' else '#e5f2fa') + ';color:#202c33;'">
+                        <span t-esc="'PH' if ot_cell['category'] == 'holiday' else '2.0x' if ot_cell['category'] == 'sunday' else '1.5x'"/>
+                        <span t-esc="' %.2fh' % ot_cell['candidate']"/>
+                        
+                      </span>
+                    </td>
+                    <td style="border:1px solid #d9dfe2;padding:4px 2px;text-align:center;vertical-align:middle;">
+                      <t t-set="ot_cell" t-value="doc._overtime_cell(line.employee_id.id, 3)"/>
+                      <span t-field="line.day_3"/>
+                      <span t-if="ot_cell" t-att-style="'display:inline-block;font-size:8px;font-weight:bold;margin-left:3px;padding:2px 3px;background:' + ('#fff0d6' if ot_cell['category'] == 'holiday' else '#f1e8fa' if ot_cell['category'] == 'sunday' else '#e5f2fa') + ';color:#202c33;'">
+                        <span t-esc="'PH' if ot_cell['category'] == 'holiday' else '2.0x' if ot_cell['category'] == 'sunday' else '1.5x'"/>
+                        <span t-esc="' %.2fh' % ot_cell['candidate']"/>
+                        
+                      </span>
+                    </td>
+                    <td style="border:1px solid #d9dfe2;padding:4px 2px;text-align:center;vertical-align:middle;">
+                      <t t-set="ot_cell" t-value="doc._overtime_cell(line.employee_id.id, 4)"/>
+                      <span t-field="line.day_4"/>
+                      <span t-if="ot_cell" t-att-style="'display:inline-block;font-size:8px;font-weight:bold;margin-left:3px;padding:2px 3px;background:' + ('#fff0d6' if ot_cell['category'] == 'holiday' else '#f1e8fa' if ot_cell['category'] == 'sunday' else '#e5f2fa') + ';color:#202c33;'">
+                        <span t-esc="'PH' if ot_cell['category'] == 'holiday' else '2.0x' if ot_cell['category'] == 'sunday' else '1.5x'"/>
+                        <span t-esc="' %.2fh' % ot_cell['candidate']"/>
+                        
+                      </span>
+                    </td>
+                    <td style="border:1px solid #d9dfe2;padding:4px 2px;text-align:center;vertical-align:middle;">
+                      <t t-set="ot_cell" t-value="doc._overtime_cell(line.employee_id.id, 5)"/>
+                      <span t-field="line.day_5"/>
+                      <span t-if="ot_cell" t-att-style="'display:inline-block;font-size:8px;font-weight:bold;margin-left:3px;padding:2px 3px;background:' + ('#fff0d6' if ot_cell['category'] == 'holiday' else '#f1e8fa' if ot_cell['category'] == 'sunday' else '#e5f2fa') + ';color:#202c33;'">
+                        <span t-esc="'PH' if ot_cell['category'] == 'holiday' else '2.0x' if ot_cell['category'] == 'sunday' else '1.5x'"/>
+                        <span t-esc="' %.2fh' % ot_cell['candidate']"/>
+                        
+                      </span>
+                    </td>
+                    <td style="border:1px solid #d9dfe2;padding:4px 2px;text-align:center;vertical-align:middle;">
+                      <t t-set="ot_cell" t-value="doc._overtime_cell(line.employee_id.id, 6)"/>
+                      <span t-field="line.day_6"/>
+                      <span t-if="ot_cell" t-att-style="'display:inline-block;font-size:8px;font-weight:bold;margin-left:3px;padding:2px 3px;background:' + ('#fff0d6' if ot_cell['category'] == 'holiday' else '#f1e8fa' if ot_cell['category'] == 'sunday' else '#e5f2fa') + ';color:#202c33;'">
+                        <span t-esc="'PH' if ot_cell['category'] == 'holiday' else '2.0x' if ot_cell['category'] == 'sunday' else '1.5x'"/>
+                        <span t-esc="' %.2fh' % ot_cell['candidate']"/>
+                        
+                      </span>
+                    </td>
+                    <td style="border:1px solid #d9dfe2;padding:4px 2px;text-align:center;"><span t-field="line.absent_days"/></td>
+                    <td style="border:1px solid #d9dfe2;padding:4px 3px;text-align:right;font-weight:bold;"><span t-field="line.net_hours"/></td>
+                    <t t-set="employee_ot" t-value="doc._overtime_employee_weekly(line.employee_id.id)"/>
+                    <td style="border:1px solid #d9dfe2;padding:4px 2px;text-align:right;font-weight:bold;background:#e5f2fa;"><span t-if="employee_ot['rate_15']" t-out="'%.2f' % employee_ot['rate_15']"/></td>
+                    <td style="border:1px solid #d9dfe2;padding:4px 2px;text-align:right;font-weight:bold;background:#f1e8fa;"><span t-if="employee_ot['rate_20']" t-out="'%.2f' % employee_ot['rate_20']"/></td><td style="border:1px solid #d9dfe2;padding:4px 2px;text-align:right;font-weight:bold;background:#e5e9ec;"><span t-if="employee_ot['rate_15'] or employee_ot['rate_20']" t-out="'%.2f' % (employee_ot['rate_15'] + employee_ot['rate_20'])"/></td>
+                  </tr>
+                  <t t-set="team_summary" t-value="doc._daily_team_attendance_for_team(team.id)"/>
+                  <tr style="background:#f0f2f3;font-weight:bold;">
+                    <td style="border:1px solid #cbd2d7;padding:4px 5px;">Present</td>
+                    <td style="border:1px solid #cbd2d7;padding:4px 2px;text-align:center;"><span t-if="team_summary['days'][0]['present'] or team_summary['days'][0]['absent'] or team_summary['days'][0]['other']" t-out="team_summary['days'][0]['present']"/></td>
+                    <td style="border:1px solid #cbd2d7;padding:4px 2px;text-align:center;"><span t-if="team_summary['days'][1]['present'] or team_summary['days'][1]['absent'] or team_summary['days'][1]['other']" t-out="team_summary['days'][1]['present']"/></td>
+                    <td style="border:1px solid #cbd2d7;padding:4px 2px;text-align:center;"><span t-if="team_summary['days'][2]['present'] or team_summary['days'][2]['absent'] or team_summary['days'][2]['other']" t-out="team_summary['days'][2]['present']"/></td>
+                    <td style="border:1px solid #cbd2d7;padding:4px 2px;text-align:center;"><span t-if="team_summary['days'][3]['present'] or team_summary['days'][3]['absent'] or team_summary['days'][3]['other']" t-out="team_summary['days'][3]['present']"/></td>
+                    <td style="border:1px solid #cbd2d7;padding:4px 2px;text-align:center;"><span t-if="team_summary['days'][4]['present'] or team_summary['days'][4]['absent'] or team_summary['days'][4]['other']" t-out="team_summary['days'][4]['present']"/></td>
+                    <td style="border:1px solid #cbd2d7;padding:4px 2px;text-align:center;"><span t-if="team_summary['days'][5]['present'] or team_summary['days'][5]['absent'] or team_summary['days'][5]['other']" t-out="team_summary['days'][5]['present']"/></td>
+                    <td style="border:1px solid #cbd2d7;padding:4px 2px;text-align:center;"><span t-if="team_summary['days'][6]['present'] or team_summary['days'][6]['absent'] or team_summary['days'][6]['other']" t-out="team_summary['days'][6]['present']"/></td>
+                    <td style="border:1px solid #cbd2d7;padding:4px 2px;"/>
+                    <td style="border:1px solid #cbd2d7;padding:4px 2px;"/>
+                  <td style="border:1px solid #cbd2d7;"/><td style="border:1px solid #cbd2d7;"/><td style="border:1px solid #cbd2d7;"/></tr>
+                  <tr style="background:#f0f2f3;font-weight:bold;">
+                    <td style="border:1px solid #cbd2d7;padding:4px 5px;">Absent</td>
+                    <td style="border:1px solid #cbd2d7;padding:4px 2px;text-align:center;"><span t-if="team_summary['days'][0]['present'] or team_summary['days'][0]['absent'] or team_summary['days'][0]['other']" t-out="team_summary['days'][0]['absent']"/></td>
+                    <td style="border:1px solid #cbd2d7;padding:4px 2px;text-align:center;"><span t-if="team_summary['days'][1]['present'] or team_summary['days'][1]['absent'] or team_summary['days'][1]['other']" t-out="team_summary['days'][1]['absent']"/></td>
+                    <td style="border:1px solid #cbd2d7;padding:4px 2px;text-align:center;"><span t-if="team_summary['days'][2]['present'] or team_summary['days'][2]['absent'] or team_summary['days'][2]['other']" t-out="team_summary['days'][2]['absent']"/></td>
+                    <td style="border:1px solid #cbd2d7;padding:4px 2px;text-align:center;"><span t-if="team_summary['days'][3]['present'] or team_summary['days'][3]['absent'] or team_summary['days'][3]['other']" t-out="team_summary['days'][3]['absent']"/></td>
+                    <td style="border:1px solid #cbd2d7;padding:4px 2px;text-align:center;"><span t-if="team_summary['days'][4]['present'] or team_summary['days'][4]['absent'] or team_summary['days'][4]['other']" t-out="team_summary['days'][4]['absent']"/></td>
+                    <td style="border:1px solid #cbd2d7;padding:4px 2px;text-align:center;"><span t-if="team_summary['days'][5]['present'] or team_summary['days'][5]['absent'] or team_summary['days'][5]['other']" t-out="team_summary['days'][5]['absent']"/></td>
+                    <td style="border:1px solid #cbd2d7;padding:4px 2px;text-align:center;"><span t-if="team_summary['days'][6]['present'] or team_summary['days'][6]['absent'] or team_summary['days'][6]['other']" t-out="team_summary['days'][6]['absent']"/></td>
+                    <td style="border:1px solid #cbd2d7;padding:4px 2px;text-align:center;"><span t-out="team_summary['absent_week']"/></td>
+                    <td style="border:1px solid #cbd2d7;padding:4px 2px;"/>
+                  <td style="border:1px solid #cbd2d7;"/><td style="border:1px solid #cbd2d7;"/><td style="border:1px solid #cbd2d7;"/></tr>
+                  <tr style="background:#e5e9ec;font-weight:bold;">
+                    <td style="border:1px solid #cbd2d7;padding:4px 5px;">Attendance %</td>
+                    <td style="border:1px solid #cbd2d7;padding:4px 2px;text-align:center;"><span t-if="team_summary['days'][0]['rate'] is not None" t-out="('%.1f' % team_summary['days'][0]['rate']) + '%'"/></td>
+                    <td style="border:1px solid #cbd2d7;padding:4px 2px;text-align:center;"><span t-if="team_summary['days'][1]['rate'] is not None" t-out="('%.1f' % team_summary['days'][1]['rate']) + '%'"/></td>
+                    <td style="border:1px solid #cbd2d7;padding:4px 2px;text-align:center;"><span t-if="team_summary['days'][2]['rate'] is not None" t-out="('%.1f' % team_summary['days'][2]['rate']) + '%'"/></td>
+                    <td style="border:1px solid #cbd2d7;padding:4px 2px;text-align:center;"><span t-if="team_summary['days'][3]['rate'] is not None" t-out="('%.1f' % team_summary['days'][3]['rate']) + '%'"/></td>
+                    <td style="border:1px solid #cbd2d7;padding:4px 2px;text-align:center;"><span t-if="team_summary['days'][4]['rate'] is not None" t-out="('%.1f' % team_summary['days'][4]['rate']) + '%'"/></td>
+                    <td style="border:1px solid #cbd2d7;padding:4px 2px;text-align:center;"><span t-if="team_summary['days'][5]['rate'] is not None" t-out="('%.1f' % team_summary['days'][5]['rate']) + '%'"/></td>
+                    <td style="border:1px solid #cbd2d7;padding:4px 2px;text-align:center;"><span t-if="team_summary['days'][6]['rate'] is not None" t-out="('%.1f' % team_summary['days'][6]['rate']) + '%'"/></td>
+                    <td style="border:1px solid #cbd2d7;padding:4px 2px;"/>
+                    <td style="border:1px solid #cbd2d7;padding:4px 2px;text-align:right;"><span t-if="team_summary['rate'] is not None" t-out="('%.1f' % team_summary['rate']) + '%'"/></td>
+                  <td style="border:1px solid #cbd2d7;"/><td style="border:1px solid #cbd2d7;"/><td style="border:1px solid #cbd2d7;"/></tr>
+                  <t t-set="ot_team" t-value="doc._overtime_report_data()['teams'].get(team.id)"/>
+                  <tr style="background:#e5f2fa;font-weight:bold;"><td style="border:1px solid #cbd2d7;padding:4px 5px;">Overtime 1.5× (h)</td>
+                    <td style="border:1px solid #cbd2d7;padding:4px 2px;text-align:center;"><span t-if="ot_team and ot_team['days'][0].get('rate_15')" t-out="'%.2f' % ot_team['days'][0]['rate_15']"/></td>
+                    <td style="border:1px solid #cbd2d7;padding:4px 2px;text-align:center;"><span t-if="ot_team and ot_team['days'][1].get('rate_15')" t-out="'%.2f' % ot_team['days'][1]['rate_15']"/></td>
+                    <td style="border:1px solid #cbd2d7;padding:4px 2px;text-align:center;"><span t-if="ot_team and ot_team['days'][2].get('rate_15')" t-out="'%.2f' % ot_team['days'][2]['rate_15']"/></td>
+                    <td style="border:1px solid #cbd2d7;padding:4px 2px;text-align:center;"><span t-if="ot_team and ot_team['days'][3].get('rate_15')" t-out="'%.2f' % ot_team['days'][3]['rate_15']"/></td>
+                    <td style="border:1px solid #cbd2d7;padding:4px 2px;text-align:center;"><span t-if="ot_team and ot_team['days'][4].get('rate_15')" t-out="'%.2f' % ot_team['days'][4]['rate_15']"/></td>
+                    <td style="border:1px solid #cbd2d7;padding:4px 2px;text-align:center;"><span t-if="ot_team and ot_team['days'][5].get('rate_15')" t-out="'%.2f' % ot_team['days'][5]['rate_15']"/></td>
+                    <td style="border:1px solid #cbd2d7;padding:4px 2px;text-align:center;"><span t-if="ot_team and ot_team['days'][6].get('rate_15')" t-out="'%.2f' % ot_team['days'][6]['rate_15']"/></td>
+                    <td style="border:1px solid #cbd2d7;"/><td style="border:1px solid #cbd2d7;text-align:right;padding:4px 3px;"><strong t-out="'%.2f' % (sum(d.get('rate_15', 0.0) for d in ot_team['days']) if ot_team else 0.0)"/></td><td style="border:1px solid #cbd2d7;"/><td style="border:1px solid #cbd2d7;"/><td style="border:1px solid #cbd2d7;"/></tr>
+                  <tr style="background:#f1e8fa;font-weight:bold;"><td style="border:1px solid #cbd2d7;padding:4px 5px;">Overtime 2.0× (h)</td>
+                    <td style="border:1px solid #cbd2d7;padding:4px 2px;text-align:center;"><span t-if="ot_team and ot_team['days'][0].get('rate_20')" t-out="'%.2f' % ot_team['days'][0]['rate_20']"/></td>
+                    <td style="border:1px solid #cbd2d7;padding:4px 2px;text-align:center;"><span t-if="ot_team and ot_team['days'][1].get('rate_20')" t-out="'%.2f' % ot_team['days'][1]['rate_20']"/></td>
+                    <td style="border:1px solid #cbd2d7;padding:4px 2px;text-align:center;"><span t-if="ot_team and ot_team['days'][2].get('rate_20')" t-out="'%.2f' % ot_team['days'][2]['rate_20']"/></td>
+                    <td style="border:1px solid #cbd2d7;padding:4px 2px;text-align:center;"><span t-if="ot_team and ot_team['days'][3].get('rate_20')" t-out="'%.2f' % ot_team['days'][3]['rate_20']"/></td>
+                    <td style="border:1px solid #cbd2d7;padding:4px 2px;text-align:center;"><span t-if="ot_team and ot_team['days'][4].get('rate_20')" t-out="'%.2f' % ot_team['days'][4]['rate_20']"/></td>
+                    <td style="border:1px solid #cbd2d7;padding:4px 2px;text-align:center;"><span t-if="ot_team and ot_team['days'][5].get('rate_20')" t-out="'%.2f' % ot_team['days'][5]['rate_20']"/></td>
+                    <td style="border:1px solid #cbd2d7;padding:4px 2px;text-align:center;"><span t-if="ot_team and ot_team['days'][6].get('rate_20')" t-out="'%.2f' % ot_team['days'][6]['rate_20']"/></td>
+                    <td style="border:1px solid #cbd2d7;"/><td style="border:1px solid #cbd2d7;text-align:right;padding:4px 3px;"><strong t-out="'%.2f' % (sum(d.get('rate_20', 0.0) for d in ot_team['days']) if ot_team else 0.0)"/></td><td style="border:1px solid #cbd2d7;"/><td style="border:1px solid #cbd2d7;"/><td style="border:1px solid #cbd2d7;"/></tr>
+                </tbody>
+              </table>
+            </t>
+            <div style="font-size:8px;color:#53616a;margin:5px 0 9px;">Codes: ABS = Absent; AUTH = Authorised absence; PREV = Prevented; OFF = Not scheduled; — = No confirmed entry. Numeric values are net hours.</div>
+            <div style="font-size:8px;color:#53616a;margin-bottom:7px;">Overtime indicators: blue = 1.5×; purple = 2.0×; amber = public holiday (assessed separately). Hours are identified overtime, not payroll authorisation.</div>
+            <div style="background:#202c33;color:white;border-left:4px solid #df0015;padding:6px 9px;font-weight:bold;margin-bottom:5px;">WEEKLY OVERTIME SUMMARY</div>
+            <t t-set="ot_report" t-value="doc._overtime_report_data()"/>
+            <table style="width:100%;border-collapse:collapse;font-size:8px;margin-bottom:8px;">
+              <tr style="background:#e5e9ec;font-weight:bold;"><td style="padding:4px;border:1px solid #cbd2d7;">Overtime category</td><td style="padding:4px;border:1px solid #cbd2d7;text-align:right;">Hours</td></tr>
+              <tr><td style="padding:4px;border:1px solid #cbd2d7;">Overtime 1.5×</td><td style="padding:4px;border:1px solid #cbd2d7;text-align:right;" t-out="'%.2f' % (ot_report['totals']['weekday']['candidate'] + ot_report['totals']['saturday']['candidate'])"/></tr>
+              <tr><td style="padding:4px;border:1px solid #cbd2d7;">Overtime 2.0×</td><td style="padding:4px;border:1px solid #cbd2d7;text-align:right;" t-out="'%.2f' % ot_report['totals']['sunday']['candidate']"/></tr>
+              <tr><td style="padding:4px;border:1px solid #cbd2d7;">Public holiday — statutory assessment</td><td style="padding:4px;border:1px solid #cbd2d7;text-align:right;" t-out="'%.2f' % ot_report['totals']['holiday']['candidate']"/></tr>
+            </table>
+            <div style="background:#202c33;color:white;border-left:4px solid #df0015;padding:6px 9px;font-weight:bold;margin-bottom:5px;">OUTSTANDING REGISTERS</div>
+            <t t-if="not doc.pending_line_ids"><div style="border:1px solid #cbd2d7;padding:6px 9px;color:#53616a;">No outstanding registers</div></t>
+            <table t-if="doc.pending_line_ids" style="width:100%;border-collapse:collapse;font-size:9px;">
+              <thead><tr style="background:#e5e9ec;"><th style="border:1px solid #cbd2d7;padding:5px;text-align:left;">Register</th><th style="border:1px solid #cbd2d7;padding:5px;text-align:left;">Date</th><th style="border:1px solid #cbd2d7;padding:5px;text-align:left;">Team</th><th style="border:1px solid #cbd2d7;padding:5px;text-align:left;">Status</th></tr></thead>
+              <tbody><tr t-foreach="doc.pending_line_ids" t-as="pending"><td style="border:1px solid #cbd2d7;padding:5px;"><span t-field="pending.register_id"/></td><td style="border:1px solid #cbd2d7;padding:5px;"><span t-field="pending.register_date"/></td><td style="border:1px solid #cbd2d7;padding:5px;"><span t-field="pending.team_id"/></td><td style="border:1px solid #cbd2d7;padding:5px;"><span t-field="pending.register_state"/></td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="footer" style="font-family:Arial,Helvetica,sans-serif;font-size:8px;color:#202c33;">
+          <div style="border-top:2px solid #df0015;padding-top:5px;">
+            <span>SAMBROS ELECTRICAL CONSULTANTS (PTY) LTD</span>
+            <span style="float:right;">Weekly Attendance Summary | <span class="page"/> / <span class="topage"/></span>
+          </div>
+        </div>
+      </t>
+    </t>
+  </template>
+</odoo>

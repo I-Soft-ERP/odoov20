@@ -1,0 +1,62 @@
+<odoo>
+ <record id="view_overtime_review_form" model="ir.ui.view">
+  <field name="name">sb.attendance.overtime.review.form</field>
+  <field name="model">sb.attendance.overtime.review</field>
+  <field name="arch" type="xml">
+   <form string="Management Overtime Review">
+    <header><button name="action_refresh" type="object" string="Generate / Refresh" class="btn-primary"/></header>
+    <sheet>
+     <group><group><field name="date_from"/><field name="date_to"/><field name="team_id"/></group>
+      <group><field name="company_id" groups="base.group_multi_company"/><field name="pending_count"/><field name="review_pending_count"/><field name="candidate_hours"/><field name="approved_hours"/></group></group>
+     <field name="note" nolabel="1"/>
+     <separator string="Team Overtime Decisions — One Action Per Team Per Day"/>
+     <field name="team_approval_ids" nolabel="1" readonly="0">
+      <list create="0" delete="0" edit="0" open_form_view="1">
+       <field name="work_date"/><field name="team_id"/><field name="employee_count"/>
+       <field name="candidate_hours"/><field name="is_finalised"/><field name="decision"/><field name="approved_hours"/>
+      </list>
+      <form string="Team Overtime Decision" create="0" delete="0">
+       <header>
+        <button name="action_approve_team" type="object" string="Approve Team Overtime" class="btn-primary" invisible="decision != 'pending' or not is_finalised"/>
+        <button name="action_reject_team" type="object" string="Reject Team Overtime" invisible="decision != 'pending'"/>
+       </header>
+       <sheet><group><group><field name="work_date"/><field name="team_id"/><field name="employee_count"/>
+        <field name="candidate_hours"/><field name="is_finalised"/></group>
+        <group><field name="decision"/><field name="approved_hours"/><field name="reviewed_by"/><field name="reviewed_on"/></group></group>
+        <field name="reason" placeholder="One reason for the entire team"/>
+       </sheet>
+      </form>
+     </field>
+     <separator string="Employee Detail — Read Only"/>
+     <field name="line_ids" nolabel="1" readonly="1">
+      <list create="0" delete="0" edit="0" open_form_view="1">
+       <field name="work_date"/><field name="team_id"/><field name="employee_id"/>
+       <field name="net_hours"/><field name="category"/><field name="candidate_hours"/><field name="rate_multiplier"/><field name="ordinary_workday" optional="hide"/><field name="holiday_total_pay" optional="hide"/><field name="holiday_additional_pay" optional="hide"/>
+       <field name="is_finalised"/><field name="decision"/><field name="approved_hours"/>
+      </list>
+      <form string="Management Overtime Decision" create="0" delete="0">
+       <sheet><group><group><field name="employee_id"/><field name="work_date"/><field name="team_id"/><field name="register_refs"/><field name="is_finalised"/></group>
+        <group><field name="net_hours"/><field name="is_public_holiday"/><field name="category"/><field name="candidate_hours"/><field name="decision"/><field name="approved_hours"/></group></group>
+        <separator string="Public Holiday Pay — Illustrative Only (Not Payroll)"/>
+        <group><group><field name="ordinary_workday"/><field name="calendar_source"/><field name="scheduled_day_hours"/><field name="test_hourly_rate"/></group><group><field name="holiday_total_pay"/><field name="holiday_additional_pay"/></group></group>
+        <group><group></group></group>
+        <group><field name="reason"/><field name="reviewed_by"/><field name="reviewed_on"/></group>
+       </sheet>
+      </form>
+     </field>
+    </sheet>
+   </form>
+  </field>
+ </record>
+ <record id="action_overtime_review" model="ir.actions.act_window">
+  <field name="name">Management Overtime Review</field><field name="res_model">sb.attendance.overtime.review</field>
+  <field name="view_mode">list,form</field>
+ </record>
+ <record id="view_overtime_review_list" model="ir.ui.view">
+  <field name="name">sb.attendance.overtime.review.list</field>
+  <field name="model">sb.attendance.overtime.review</field>
+  <field name="arch" type="xml"><list><field name="name"/><field name="team_id"/><field name="candidate_hours"/><field name="approved_hours"/></list></field>
+ </record>
+ <menuitem id="menu_overtime_review" name="Management Overtime Review" parent="menu_attendance_operations"
+  action="action_overtime_review" sequence="27" groups="sb_daily_attendance.group_attendance_admin"/>
+</odoo>

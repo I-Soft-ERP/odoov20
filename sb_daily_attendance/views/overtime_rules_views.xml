@@ -1,0 +1,9 @@
+<odoo>
+ <record id="view_overtime_rules_form" model="ir.ui.view">
+  <field name="name">sb.attendance.overtime.rules.form</field><field name="model">sb.attendance.overtime.rules</field>
+  <field name="arch" type="xml"><form string="Overtime Rules"><header><button name="action_sync_holidays" type="object" string="Synchronise Public Holidays" class="btn-primary"/></header><sheet><group><field name="name"/><field name="company_id"/><field name="weekday_start" widget="float_time"/><field name="weekday_rate"/><field name="saturday_rate"/><field name="sunday_rate"/><field name="illustrative_hourly_rate"/><field name="holiday_sync_status" readonly="1"/></group></sheet></form></field>
+ </record>
+ <record id="view_overtime_rules_list" model="ir.ui.view"><field name="name">sb.attendance.overtime.rules.list</field><field name="model">sb.attendance.overtime.rules</field><field name="arch" type="xml"><list><field name="name"/><field name="company_id"/><field name="weekday_start" widget="float_time"/><field name="weekday_rate"/><field name="saturday_rate"/><field name="sunday_rate"/></list></field></record>
+ <record id="action_overtime_rules" model="ir.actions.act_window"><field name="name">Overtime Rules</field><field name="res_model">sb.attendance.overtime.rules</field><field name="view_mode">list,form</field></record>
+ <menuitem id="menu_overtime_rules" name="Overtime Rules" parent="menu_attendance_administration" action="action_overtime_rules" sequence="40" groups="sb_daily_attendance.group_attendance_admin"/>
+</odoo>

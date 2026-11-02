@@ -1,0 +1,71 @@
+<odoo>
+<record id="view_attendance_register_list" model="ir.ui.view"><field name="name">sb.attendance.register.list</field><field name="model">sb.attendance.register</field><field name="arch" type="xml"><list><field name="name"/><field name="date"/><field name="team_id"/><field name="foreman_id"/><field name="job_description"/><field name="state"/></list></field></record>
+<record id="view_attendance_register_form" model="ir.ui.view"><field name="name">sb.attendance.register.form</field><field name="model">sb.attendance.register</field><field name="arch" type="xml"><form string="Daily Attendance"><header><button name="action_apply_start" type="object" string="Apply Start to Team" invisible="state != 'draft'"/><button name="action_close" type="object" string="Close Attendance" class="btn-primary" invisible="state != 'draft'"/><button name="action_apply_finish" type="object" string="Apply Finish to Team" invisible="state != 'closing'"/><button name="action_submit" type="object" string="Submit" class="btn-primary" invisible="state != 'closing'"/><button name="action_finalise" type="object" string="Finalise" groups="sb_daily_attendance.group_attendance_admin" invisible="state != 'submitted'"/><button name="action_reopen" type="object" string="Reopen for Correction" groups="sb_daily_attendance.group_attendance_admin" invisible="state not in ('submitted','final')"/><field name="state" widget="statusbar" statusbar_visible="draft,closing,submitted,final"/></header><sheet><group><group><field name="name"/><field name="date" readonly="state != 'draft'"/><field name="team_id" readonly="state != 'draft'"/><field name="foreman_id" readonly="1"/><field name="company_id" groups="base.group_multi_company"/></group><group><field name="start_time" widget="float_time" readonly="state != 'draft'"/><field name="finish_time" widget="float_time" invisible="state == 'draft'" readonly="state in ('submitted','final')"/><field name="job_reference"/><field name="job_description"/></group></group><group string="Operational Disruption"><field name="disruption"/><field name="disruption_notes" invisible="disruption == 'none'"/></group><notebook><page string="Team Attendance"><field name="line_ids" readonly="state in ('submitted','final')"><list editable="bottom"><field name="employee_id"/><field name="status"/><field name="start_override" column_invisible="True"/><field name="finish_override" column_invisible="True"/><field name="start_time" widget="float_time" invisible="status != 'present'"/><field name="finish_time" widget="float_time" column_invisible="parent.state == 'draft'" invisible="status != 'present'"/><field name="start_display" column_invisible="True"/><field name="finish_display" column_invisible="True"/><field name="gross_hours" readonly="1" optional="show"/><field name="lunch_hours" readonly="1" optional="show"/><field name="net_hours" readonly="1" optional="show"/><field name="notes"/></list></field></page><page string="Audit"><field name="message_follower_ids" invisible="1"/><field name="submitted_by"/><field name="submitted_at"/><field name="finalised_by"/><field name="finalised_at"/></page></notebook></sheet><chatter/></form></field></record>
+<record id="view_attendance_team_list" model="ir.ui.view"><field name="name">sb.attendance.team.list</field><field name="model">sb.attendance.team</field><field name="arch" type="xml"><list><field name="name"/><field name="foreman_id"/><field name="company_id"/></list></field></record>
+<record id="view_attendance_team_form" model="ir.ui.view"><field name="name">sb.attendance.team.form</field><field name="model">sb.attendance.team</field><field name="arch" type="xml"><form><sheet><group><field name="name"/><field name="foreman_id" domain="[(&apos;active&apos;, &apos;=&apos;, True), &apos;|&apos;, (&apos;job_id.name&apos;, &apos;ilike&apos;, &apos;foreman&apos;), (&apos;job_id.name&apos;, &apos;ilike&apos;, &apos;supervisor&apos;)]"/><field name="company_id"/><field name="active"/></group><notebook><page string="Team Members"><field name="membership_ids"><list editable="bottom"><field name="employee_id"/><field name="date_from"/><field name="date_to"/></list></field></page></notebook></sheet></form></field></record>
+<record id="view_attendance_team_dashboard_kanban" model="ir.ui.view">
+  <field name="name">sb.attendance.team.dashboard.kanban</field>
+  <field name="model">sb.attendance.team</field>
+  <field name="arch" type="xml">
+    <kanban create="false" quick_create="false" records_draggable="false" class="sb_attendance_dashboard" js_class="sb_attendance_summary_kanban" limit="200">
+      <field name="name"/><field name="foreman_id"/><field name="dashboard_date"/>
+      <field name="dashboard_status"/><field name="dashboard_present"/>
+      <field name="dashboard_absent"/><field name="dashboard_prevented"/>
+      <field name="dashboard_team_size"/><field name="dashboard_approved_ot"/>
+      <field name="dashboard_pending_ot"/><field name="dashboard_ot_state"/>
+      <templates><t t-name="card">
+        <div class="sb_team_card" t-att-class="'sb_status_' + record.dashboard_status.raw_value">
+          <div class="sb_team_header">
+            <div><div class="sb_team_name"><field name="name"/></div>
+              <div class="sb_team_foreman">Foreman: <field name="foreman_id"/></div></div>
+            <span class="sb_state_pill"><field name="dashboard_status"/></span>
+          </div>
+          <div class="sb_team_body">
+            <div class="sb_attendance_metrics">
+              <div class="sb_metric sb_metric_present"><span>Present</span><strong><field name="dashboard_present"/></strong></div>
+              <div class="sb_metric sb_metric_absent"><span>Absent</span><strong><field name="dashboard_absent"/></strong></div>
+              <div class="sb_metric sb_metric_prevented"><span>Prevented</span><strong><field name="dashboard_prevented"/></strong></div>
+            </div>
+            <div class="sb_overtime_row">
+              <div class="sb_ot_approved"><span>✓ Approved overtime</span><strong><field name="dashboard_approved_ot"/> hrs</strong></div>
+              <div class="sb_ot_pending" t-att-class="record.dashboard_pending_ot.raw_value &gt; 0 ? 'sb_ot_attention' : ''"><span>◷ Pending overtime</span><strong><field name="dashboard_pending_ot"/> hrs</strong></div>
+            </div>
+            <t t-if="record.dashboard_status.raw_value == 'missing'">
+              <div class="sb_missing_alert">⚠ Attendance register outstanding</div>
+            </t>
+            <t t-if="record.dashboard_pending_ot.raw_value &gt; 0">
+              <div class="sb_approval_alert">
+                <span>⚠ Overtime approval required</span>
+                <button type="object" name="action_open_dashboard_overtime" groups="sb_daily_attendance.group_attendance_admin" class="btn btn-sm sb_review_btn">Review →</button>
+              </div>
+            </t>
+            <t t-if="record.dashboard_ot_state.raw_value == 'none'">
+              <div class="sb_ot_note">No overtime decision recorded for selected date</div>
+            </t>
+            <div class="sb_team_footer">
+              <small><field name="dashboard_date"/> · <field name="dashboard_present"/> / <field name="dashboard_team_size"/> present</small>
+              <button type="object" name="action_open_dashboard_register" class="btn btn-outline-primary btn-sm">View Attendance →</button>
+            </div>
+          </div>
+        </div>
+      </t></templates>
+    </kanban>
+  </field>
+</record>
+<record id="action_attendance_dashboard" model="ir.actions.act_window">
+  <field name="name">Team Attendance Dashboard</field>
+  <field name="res_model">sb.attendance.team</field>
+  <field name="view_mode">kanban</field>
+  <field name="view_id" ref="view_attendance_team_dashboard_kanban"/>
+  <field name="domain">[('active','=',True)]</field>
+</record>
+<record id="action_attendance_register" model="ir.actions.act_window"><field name="name">Daily Attendance</field><field name="res_model">sb.attendance.register</field><field name="view_mode">list,form</field></record>
+<record id="action_attendance_team" model="ir.actions.act_window"><field name="name">Attendance Teams</field><field name="res_model">sb.attendance.team</field><field name="view_mode">list,form</field></record>
+<menuitem id="menu_attendance_root" name="Sambros Attendance" sequence="55" action="action_attendance_dashboard" groups="sb_daily_attendance.group_attendance_user,sb_daily_attendance.group_attendance_viewer"/>
+<menuitem id="menu_attendance_operations" name="Daily Operations" parent="menu_attendance_root" sequence="10"/>
+<menuitem id="menu_attendance_reports" name="Reports" parent="menu_attendance_root" sequence="20" groups="sb_daily_attendance.group_attendance_admin"/>
+<menuitem id="menu_attendance_administration" name="Configuration" parent="menu_attendance_root" sequence="30" groups="sb_daily_attendance.group_attendance_admin"/>
+<menuitem id="menu_attendance_dashboard" name="Team Dashboard" parent="menu_attendance_root" action="action_attendance_dashboard" sequence="1"/>
+<menuitem id="menu_attendance_register" name="Daily Registers" parent="menu_attendance_operations" action="action_attendance_register" sequence="10"/>
+<menuitem id="menu_attendance_team" name="Teams" parent="menu_attendance_administration" action="action_attendance_team" sequence="20" groups="sb_daily_attendance.group_attendance_admin"/>
+</odoo>

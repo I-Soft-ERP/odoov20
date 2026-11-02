@@ -1,0 +1,46 @@
+<odoo>
+  <record id="view_payroll_attendance_summary_form" model="ir.ui.view">
+    <field name="name">sb.attendance.payroll.summary.form</field>
+    <field name="model">sb.attendance.payroll.summary</field>
+    <field name="arch" type="xml">
+      <form string="Payroll Attendance Summary" create="0" delete="0">
+        <header>
+          <button name="action_generate" type="object" string="Generate Summary" class="btn-primary"/>
+          <button name="action_export_xlsx" type="object" string="Export Excel"/>
+        </header>
+        <sheet>
+          <group><group><field name="date_from"/><field name="date_to"/><field name="team_id"/></group>
+            <group><field name="company_id" groups="base.group_multi_company"/>
+              <field name="employee_count"/><field name="normal_total"/><field name="overtime_total"/></group></group>
+          <group string="Reconciliation"><group><field name="outstanding_register_count"/>
+            <field name="outstanding_overtime_count"/></group><group><field name="duplicate_count"/></group></group>
+          <field name="warning" nolabel="1" readonly="1"/>
+          <separator string="Employee Attendance and Approved Overtime"/>
+          <field name="line_ids" nolabel="1" readonly="1">
+            <list create="0" edit="0" delete="0">
+              <field name="employee_id"/><field name="team_names" optional="show"/>
+              <field name="days_worked" sum="Total"/><field name="normal_hours" sum="Total"/>
+              <field name="weekday_ot" sum="Total"/><field name="saturday_ot" sum="Total"/>
+              <field name="sunday_ot" sum="Total"/><field name="holiday_ot" sum="Total"/>
+              <field name="absent_days" sum="Total" optional="show"/>
+              <field name="authorised_days" sum="Total" optional="show"/>
+              <field name="prevented_days" sum="Total" optional="show"/>
+              <field name="gross_hours" sum="Total" optional="hide"/>
+              <field name="break_hours" sum="Total" optional="hide"/>
+              <field name="net_hours" sum="Total" optional="hide"/>
+            </list>
+          </field>
+        </sheet>
+      </form>
+    </field>
+  </record>
+  <record id="action_payroll_attendance_summary" model="ir.actions.act_window">
+    <field name="name">Payroll Attendance Summary</field>
+    <field name="res_model">sb.attendance.payroll.summary</field>
+    <field name="view_mode">form</field>
+    <field name="target">current</field>
+  </record>
+  <menuitem id="menu_payroll_attendance_summary" name="Payroll Attendance Summary"
+    parent="menu_attendance_reports" action="action_payroll_attendance_summary" sequence="30"
+    groups="sb_daily_attendance.group_attendance_admin"/>
+</odoo>

@@ -1,0 +1,17 @@
+.sb_attendance_exception_list .o_data_cell[name="missing_employee_names"],
+.sb_attendance_exception_list .o_data_cell[name="missing_employee_names"] * {
+    white-space: pre-line !important;
+    overflow-wrap: anywhere !important;
+    text-overflow: clip !important;
+}
+
+/* Weekly management report: make outstanding registers readable. */
+.o_form_view:has(.sb_weekly_summary_sheet) .o_form_sheet_bg .sb_weekly_summary_sheet {
+    max-width: none;
+    width: 100%;
+}
+.sb_weekly_outstanding_table { width: 100%; }
+.sb_weekly_outstanding_table .o_list_renderer { width: 100%; }
+.sb_weekly_outstanding_table .o_list_table { width: 100%; table-layout: auto; }
+.sb_weekly_outstanding_table .o_list_table th,
+.sb_weekly_outstanding_table .o_list_table td { white-space: nowrap; }

@@ -1,0 +1,38 @@
+<odoo>
+  <record id="view_missing_review_form" model="ir.ui.view">
+    <field name="name">sb.attendance.missing.review.form</field>
+    <field name="model">sb.attendance.missing.review</field>
+    <field name="arch" type="xml">
+      <form string="Missing Attendance Review">
+        <header><button name="action_run" type="object" string="Run Review" class="btn-primary"/></header>
+        <sheet>
+          <group><field name="name" invisible="1"/><field name="date_from"/><field name="date_to"/><field name="team_id"/></group>
+          <group string="Review summary">
+            <field name="reviewed_team_days"/><field name="skipped_nonworking"/>
+            <field name="skipped_no_members"/><field name="exceptions_count"/>
+          </group>
+          <field name="review_summary" nolabel="1" readonly="1"/>
+          <group string="Exceptions" col="1">
+            <field name="line_ids" nolabel="1">
+              <list create="0" edit="0" delete="0" class="sb_attendance_exception_list">
+                <field name="date" width="100px"/><field name="team_id" width="160px"/><field name="issue" width="190px"/>
+                <field name="register_id" width="175px"/><field name="expected_count" string="Expected" width="90px"/>
+                <field name="recorded_count" string="Recorded" width="90px"/>
+                <field name="missing_employee_names" string="Missing employees" width="340px"/>
+              </list>
+            </field>
+          </group>
+        </sheet>
+      </form>
+    </field>
+  </record>
+  <record id="action_missing_review" model="ir.actions.act_window">
+    <field name="name">Missing Attendance Review</field>
+    <field name="res_model">sb.attendance.missing.review</field>
+    <field name="view_mode">form</field>
+    <field name="target">current</field>
+  </record>
+  <menuitem id="menu_missing_review" name="Missing Attendance Review"
+            parent="menu_attendance_operations" action="action_missing_review"
+            sequence="30" groups="sb_daily_attendance.group_attendance_admin"/>
+</odoo>

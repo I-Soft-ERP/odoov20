@@ -1,0 +1,37 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<odoo>
+  <record id="view_weekly_summary_form" model="ir.ui.view">
+    <field name="name">sb.attendance.weekly.summary.form</field>
+    <field name="model">sb.attendance.weekly.summary</field>
+    <field name="arch" type="xml">
+      <form string="Weekly Attendance Summary" create="0" delete="0">
+        <field name="name" invisible="1"/>
+        <header><button name="action_generate" type="object" string="Generate / Refresh" class="btn-primary"/><button name="action_download_pdf" type="object" string="Download PDF"/><button name="action_download_xlsx" type="object" string="Export Excel"/></header>
+        <sheet class="sb_weekly_summary_sheet">
+          <group>
+            <group><field name="date_from"/><field name="date_to" readonly="1"/><field name="team_id" options="{'no_create': True}"/></group>
+            <group><field name="company_id" groups="base.group_multi_company"/><field name="pending_count" readonly="1"/><field name="duplicate_count" readonly="1"/></group>
+          </group>
+          <group string="Weekly Totals" col="2">
+            <group><field name="employee_count"/><field name="gross_total"/></group>
+            <group><field name="break_total"/><field name="net_total"/></group>
+          </group>
+          <separator string="Outstanding Registers"/><field name="pending_line_ids" nolabel="1" readonly="1" class="sb_weekly_outstanding_table" colspan="4">
+              <list create="0" edit="0" delete="0">
+                <field name="register_id"/><field name="register_date"/><field name="team_id"/><field name="register_state"/>
+              </list>
+            </field>
+          <div class="text-muted">Only Submitted and Finalised registers contribute to hours. Daily cells show net hours or attendance status. [DUPLICATE] identifies historical multiple entries requiring review.</div>
+          <field name="line_ids" nolabel="1"><list create="0" edit="0" delete="0">
+            <field name="team_id"/><field name="employee_id"/><field name="day_0" optional="show"/><field name="day_1" optional="show"/><field name="day_2" optional="show"/><field name="day_3" optional="show"/><field name="day_4" optional="show"/><field name="day_5" optional="show"/><field name="day_6" optional="show"/><field name="present_days" sum="Total" optional="hide"/>
+            <field name="absent_days" sum="Total" optional="hide"/><field name="authorised_days" sum="Total" optional="hide"/>
+            <field name="prevented_days" sum="Total" optional="hide"/><field name="not_scheduled_days" sum="Total" optional="hide"/>
+            <field name="gross_hours" sum="Total" optional="hide"/><field name="break_hours" sum="Total" optional="hide"/><field name="net_hours" sum="Total"/>
+          </list></field>
+        </sheet>
+      </form>
+    </field>
+  </record>
+  <record id="action_weekly_summary" model="ir.actions.act_window"><field name="name">Weekly Attendance Summary</field><field name="res_model">sb.attendance.weekly.summary</field><field name="view_mode">form</field><field name="target">current</field></record>
+  <menuitem id="menu_weekly_summary" name="Weekly Attendance Summary" parent="menu_attendance_reports" action="action_weekly_summary" sequence="25" groups="sb_daily_attendance.group_attendance_admin"/>
+</odoo>

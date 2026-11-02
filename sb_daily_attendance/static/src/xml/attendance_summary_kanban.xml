@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+  <t t-name="sb_daily_attendance.AttendanceSummaryRenderer" t-inherit="web.KanbanRenderer" t-inherit-mode="primary">
+    <xpath expr="//div[hasclass('o_kanban_renderer')]" position="before">
+      <div class="sb_management_summary">
+        <div class="sb_summary_heading">
+          <div class="sb_dashboard_heading"><strong>Attendance Overview</strong><span class="sb_dashboard_selected_date" t-esc="this.selectedDateHeading"/></div>
+          <div class="sb_dashboard_date_controls">
+            <button type="button" class="btn btn-outline-secondary btn-sm" t-on-click="() => this.shiftDashboardDate(-1)" title="Previous day">&#8249;</button>
+            <input type="date" class="form-control form-control-sm sb_dashboard_date_input" t-att-value="this.selectedDate" t-on-change="(ev) => this.changeDashboardDate(ev)" aria-label="Attendance date"/>
+            <button type="button" class="btn btn-outline-secondary btn-sm" t-on-click="() => this.shiftDashboardDate(1)" title="Next day">&#8250;</button>
+            <button type="button" class="btn btn-outline-primary btn-sm" t-on-click="() => this.showToday()">Today</button>
+          </div>
+        </div>
+        <div class="sb_whatsapp_actions">
+          <div class="sb_whatsapp_cutoff" t-if="this.isAfterMorningCutoff and this.attendanceTotals.outstanding &gt; 0">
+            &#9888; 10:00 reporting cutoff passed — <t t-esc="this.attendanceTotals.outstanding"/> team register(s) outstanding. Late submissions remain permitted.
+          </div>
+          <div class="sb_whatsapp_note" t-else="">10:00 morning reporting cutoff · WhatsApp sharing is manual</div>
+          <button type="button" class="btn btn-outline-success btn-sm sb_whatsapp_copy" t-on-click="() => this.copyWhatsappSummary()" title="Copy a summary for the HR WhatsApp group">Copy WhatsApp Summary</button>
+        </div>
+        <div class="sb_summary_tiles">
+          <div class="sb_summary_tile sb_summary_teams"><span>Teams</span><strong t-esc="this.attendanceTotals.teams"/></div>
+          <div class="sb_summary_tile sb_summary_present"><span>Present</span><strong t-esc="this.attendanceTotals.present"/></div>
+          <div class="sb_summary_tile sb_summary_absent"><span>Absent</span><strong t-esc="this.attendanceTotals.absent"/></div>
+          <div class="sb_summary_tile sb_summary_prevented"><span>Prevented</span><strong t-esc="this.attendanceTotals.prevented"/></div>
+          <div class="sb_summary_tile sb_summary_approved"><span>Approved overtime</span><strong><t t-esc="this.attendanceTotals.approved.toFixed(2)"/> hrs</strong></div>
+          <div class="sb_summary_tile sb_summary_pending"><span>Pending overtime</span><strong><t t-esc="this.attendanceTotals.pending.toFixed(2)"/> hrs</strong></div>
+          <div class="sb_summary_tile sb_summary_outstanding"><span>Outstanding registers</span><strong t-esc="this.attendanceTotals.outstanding"/></div>
+        </div>
+      </div>
+    </xpath>
+  </t>
+</templates>

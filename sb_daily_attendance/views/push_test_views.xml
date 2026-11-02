@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <record id="view_attendance_push_test_form" model="ir.ui.view">
+    <field name="name">sb.attendance.push.test.form</field>
+    <field name="model">sb.attendance.push.test</field>
+    <field name="arch" type="xml">
+      <form string="Mobile Notification Test">
+        <sheet>
+          <group><field name="target_user_id" options="{'no_create': True}"/></group>
+          <group><field name="instructions" nolabel="1" readonly="1"/></group>
+        </sheet>
+        <footer>
+          <button name="action_send_test" string="Send Test Notification" type="object" class="btn-primary"/>
+          <button string="Cancel" special="cancel" class="btn-secondary"/>
+        </footer>
+      </form>
+    </field>
+  </record>
+  <record id="action_attendance_push_test" model="ir.actions.act_window">
+    <field name="name">Mobile Notification Test</field>
+    <field name="res_model">sb.attendance.push.test</field>
+    <field name="view_mode">form</field>
+    <field name="target">new</field>
+  </record>
+  <menuitem id="menu_attendance_push_test" name="Mobile Notification Test"
+    parent="menu_attendance_administration" action="action_attendance_push_test" sequence="80"
+    groups="sb_daily_attendance.group_attendance_admin"/>
+</odoo>
