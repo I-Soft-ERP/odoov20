@@ -16,7 +16,7 @@ class Team(models.Model):
     dashboard_absent = fields.Integer(string='Absent', compute='_compute_dashboard')
     dashboard_prevented = fields.Integer(string='Prevented', compute='_compute_dashboard')
     dashboard_status = fields.Selection([
-        ('missing', 'Outstanding'), ('draft', 'Open'), ('closing', 'Closing'),
+        ('missing', 'Outstanding'), ('not_scheduled', 'Not Scheduled'), ('draft', 'Open'), ('closing', 'Closing'),
         ('submitted', 'Submitted'), ('final', 'Finalised')],
         string='Register Status', compute='_compute_dashboard')
     dashboard_register_id = fields.Many2one('sb.attendance.register', compute='_compute_dashboard')
@@ -27,6 +27,29 @@ class Team(models.Model):
         ('none', 'No Overtime'), ('pending', 'Pending Review'),
         ('approved', 'Approved'), ('mixed', 'Approved + Pending')],
         compute='_compute_dashboard', string='Overtime Status')
+
+    def _is_normal_workday(self, day):
+        self.ensure_one()
+        # Public holidays override the ordinary working calendar. Cached dates
+        # are reused; absence of an entire year is not proof of a non-holiday.
+        Holiday = self.env['sb.attendance.public.holiday'].sudo()
+        if not Holiday.search_count([('year', '=', day.year)]):
+            # Fall back to weekday rules until holiday synchronisation is complete.
+            # Back-office must verify special holidays in the holiday calendar.
+            pass
+        elif Holiday.search_count([('holiday_date', '=', day)]):
+            return False
+        calendar = self.company_id.resource_calendar_id
+        if calendar:
+            return any(int(a.dayofweek) == day.weekday() for a in calendar.attendance_ids)
+        return day.weekday() < 5
+
+    def _expects_register(self, day):
+        self.ensure_one()
+        if self._is_normal_workday(day):
+            return True
+        return bool(self.env['sb.attendance.work.expectation'].sudo().search_count([
+            ('team_id', '=', self.id), ('date', '=', day)]))
 
     def _dashboard_selected_date(self):
         raw = self.env.context.get('sb_dashboard_date')
@@ -68,7 +91,7 @@ class Team(models.Model):
             reg = by_team.get(team.id)
             team.dashboard_date = day
             team.dashboard_register_id = reg or False
-            team.dashboard_status = reg.state if reg else 'missing'
+            team.dashboard_status = reg.state if reg else ('missing' if team._expects_register(day) else 'not_scheduled')
             team.dashboard_present = len(reg.line_ids.filtered(lambda l: l.status == 'present')) if reg else 0
             team.dashboard_absent = len(reg.line_ids.filtered(lambda l: l.status == 'absent')) if reg else 0
             team.dashboard_prevented = len(reg.line_ids.filtered(lambda l: l.status == 'prevented')) if reg else 0
@@ -251,6 +274,28 @@ class Register(models.Model):
     def _constrain_unique_daily_register(self):
         self._check_unique_daily_register()
 
+    def _sync_pending_overtime_reviews(self):
+        """Rebuild undecided weekly snapshots after source attendance changes.
+
+        Reviews containing management decisions remain untouched and require
+        explicit administrative reconciliation, preserving their audit history.
+        """
+        if self.env.context.get('sb_skip_overtime_sync'):
+            return
+        Review = self.env['sb.attendance.overtime.review'].sudo()
+        for company_id, date, team_id in set(
+                (r.company_id.id, r.date, r.team_id.id) for r in self
+                if r.company_id and r.date and r.team_id):
+            week_start = date - timedelta(days=date.weekday())
+            reviews = Review.search([
+                ('company_id', '=', company_id), ('date_from', '=', week_start),
+                '|', ('team_id', '=', False), ('team_id', '=', team_id)])
+            for review in reviews:
+                if (review.line_ids.filtered(lambda l: l.decision != 'pending') or
+                        review.team_approval_ids.filtered(lambda l: l.decision != 'pending')):
+                    continue
+                review.with_context(sb_skip_overtime_sync=True).action_refresh()
+
     def write(self, vals):
         self._check_foreman_access()
         if not self._is_attendance_admin():
@@ -260,10 +305,26 @@ class Register(models.Model):
                 raise UserError(_('Use the attendance workflow buttons to change the register state.'))
             if any(key in vals for key in ('team_id', 'foreman_id', 'company_id')):
                 raise UserError(_('Only an attendance administrator may reassign a register.'))
+        old_sources = self.env['sb.attendance.register'].browse(self.ids)
+        old_keys = [(r.company_id.id, r.date, r.team_id.id) for r in old_sources]
         result = super().write(vals)
         if any(k in vals for k in ('date', 'team_id', 'company_id')):
             self._check_unique_daily_register()
             self.mapped('line_ids')._check_unique_daily_employee()
+        if not self.env.context.get('sb_skip_overtime_sync'):
+            self._sync_pending_overtime_reviews()
+            if any(k in vals for k in ('date', 'team_id', 'company_id')):
+                # Refresh reviews associated with the former team/date too.
+                for company_id, day, team_id in old_keys:
+                    if company_id and day and team_id:
+                        old_week = day - timedelta(days=day.weekday())
+                        reviews = self.env['sb.attendance.overtime.review'].sudo().search([
+                            ('company_id', '=', company_id), ('date_from', '=', old_week),
+                            '|', ('team_id', '=', False), ('team_id', '=', team_id)])
+                        for review in reviews:
+                            if not (review.line_ids.filtered(lambda l: l.decision != 'pending') or
+                                    review.team_approval_ids.filtered(lambda l: l.decision != 'pending')):
+                                review.with_context(sb_skip_overtime_sync=True).action_refresh()
         return result
 
     @api.model_create_multi
@@ -300,6 +361,7 @@ class Register(models.Model):
         records = super().create(vals_list)
         records._check_unique_daily_register()
         records.mapped('line_ids')._check_unique_daily_employee()
+        records._sync_pending_overtime_reviews()
         return records
 
     def action_apply_start(self):
@@ -339,13 +401,30 @@ class Register(models.Model):
             raise UserError(_('Only attendance administrators can reopen.'))
         self.filtered(lambda r:r.state in ('submitted','final')).write({'state':'closing'})
 
+    def unlink(self):
+        keys = [(r.company_id.id, r.date, r.team_id.id) for r in self]
+        result = super().unlink()
+        if not self.env.context.get('sb_skip_overtime_sync'):
+            Review = self.env['sb.attendance.overtime.review'].sudo()
+            for company_id, day, team_id in set(keys):
+                if not (company_id and day and team_id):
+                    continue
+                week = day - timedelta(days=day.weekday())
+                for review in Review.search([
+                        ('company_id', '=', company_id), ('date_from', '=', week),
+                        '|', ('team_id', '=', False), ('team_id', '=', team_id)]):
+                    if not (review.line_ids.filtered(lambda l: l.decision != 'pending') or
+                            review.team_approval_ids.filtered(lambda l: l.decision != 'pending')):
+                        review.with_context(sb_skip_overtime_sync=True).action_refresh()
+        return result
+
 class Line(models.Model):
     _name='sb.attendance.line'
     _description='Daily Employee Attendance'
     _order='employee_id'
     register_id=fields.Many2one('sb.attendance.register',required=True,ondelete='cascade')
     employee_id=fields.Many2one('hr.employee',required=True)
-    status=fields.Selection([('present','Present'),('absent','Employee-related Absence'),('authorised','Authorised Absence'),('prevented','Prevented from Reporting'),('not_scheduled','Not Scheduled')],required=True,default='present')
+    status=fields.Selection([('present','Present'),('absent','Employee-related Absence'),('authorised','Authorised Absence'),('sick','Sick Leave'),('prevented','Prevented from Reporting'),('not_scheduled','Not Scheduled')],required=True,default='present')
     start_time=fields.Float()
     finish_time=fields.Float()
     notes=fields.Char()
@@ -500,10 +579,12 @@ class Line(models.Model):
         for vals in vals_list:
             if vals.get('lunch_waived') and not (self.env.su or self.env.user.has_group('sb_daily_attendance.group_attendance_admin')):
                 raise UserError(_('Only attendance administrators can approve a lunch exception.'))
-            if vals.get('status') in ('absent','authorised','prevented','not_scheduled'):
+            if vals.get('status') in ('absent','authorised','sick','prevented','not_scheduled'):
                 vals.update({'start_time':0.0,'finish_time':0.0,'start_override':False,'finish_override':False,'break_manual':False,'break_override_hours':0.0})
         records = super().create(vals_list)
         records._check_unique_daily_employee()
+        records.mapped('register_id')._sync_pending_overtime_reviews()
+        records._sb_sync_sick_leave()
         return records
 
     def write(self, vals):
@@ -522,9 +603,19 @@ class Line(models.Model):
         elif vals.get('status') == 'present':
             for line in self:
                 if line.status != 'present':
-                    line.write({'status':'present','start_time':line.register_id.start_time or 7.5,
-                                'finish_time':(line.register_id.finish_time or 16.5) if line.register_id.state != 'draft' else 0.0,
-                                'start_override':False,'finish_override':False,'break_manual':False,'break_override_hours':0.0})
+                    # Apply the status transition without re-entering Line.write().
+                    # Calling line.write() here recursively processes the same
+                    # non-present status until Python's recursion limit is hit.
+                    super(Line, line).write({
+                        'status': 'present',
+                        'start_time': line.register_id.start_time or 7.5,
+                        'finish_time': (line.register_id.finish_time or 16.5)
+                                       if line.register_id.state != 'draft' else 0.0,
+                        'start_override': False,
+                        'finish_override': False,
+                        'break_manual': False,
+                        'break_override_hours': 0.0,
+                    })
             vals.pop('status',None)
         if not self.env.context.get('attendance_bulk_update'):
             if 'start_time' in vals and 'start_override' not in vals:
@@ -540,6 +631,7 @@ class Line(models.Model):
                                if key in vals and line[key] != vals[key]]
                     if changes:
                         changes_by_line.append((line.register_id, line.employee_id.name, changes))
+        old_registers = self.mapped('register_id')
         result = super().write(vals)
         if 'employee_id' in vals or 'register_id' in vals:
             self._check_unique_daily_employee()
@@ -547,6 +639,9 @@ class Line(models.Model):
             details = '; '.join('%s: %s → %s' % (key, old, new) for key, old, new in changes)
             register.message_post(body=_('Attendance correction for %s by %s: %s') %
                                   (employee, self.env.user.name, details))
+        (old_registers | self.mapped('register_id'))._sync_pending_overtime_reviews()
+        if any(k in vals for k in ('status', 'employee_id', 'register_id')):
+            self._sb_sync_sick_leave()
         return result
 
 
@@ -554,4 +649,7 @@ class Line(models.Model):
         if not (self.env.su or self.env.user.has_group('sb_daily_attendance.group_attendance_admin')):
             if any(l.register_id.state in ('submitted', 'final') for l in self):
                 raise UserError(_('Submitted attendance lines cannot be deleted by foremen.'))
-        return super().unlink()
+        registers = self.mapped('register_id')
+        result = super().unlink()
+        registers._sync_pending_overtime_reviews()
+        return result

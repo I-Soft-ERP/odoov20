@@ -187,49 +187,67 @@ class WeeklySummary(models.TransientModel):
                 'absent_week': 0, 'rate': None}
 
     def _overtime_report_data(self):
-        """Read existing overtime reviews; never approve or calculate payroll here.
+        """Calculate candidate overtime from CURRENT attendance, never stale review snapshots.
 
-        The newest review line wins for each employee/date. This avoids adding
-        duplicate snapshots when management has regenerated a weekly review.
+        Existing review/approval records remain untouched for audit purposes.
         """
         self.ensure_one()
-        domain = [('work_date', '>=', self.date_from), ('work_date', '<=', self.date_to),
-                  ('review_id.company_id', '=', self.company_id.id)]
-        if self.team_id:
-            domain.append(('team_id', '=', self.team_id.id))
-        lines = self.env['sb.attendance.overtime.line'].search(domain, order='id desc')
-        selected = {}
-        for item in lines:
-            key = (item.employee_id.id, item.work_date)
-            if key not in selected:
-                selected[key] = item
         categories = [('weekday', 'Weekday 1.5x'), ('saturday', 'Saturday 1.5x'),
                       ('sunday', 'Sunday 2.0x'), ('holiday', 'Public holiday')]
+        domain = [('date', '>=', self.date_from), ('date', '<=', self.date_to),
+                  ('company_id', '=', self.company_id.id), ('state', 'in', ('submitted', 'final'))]
+        if self.team_id:
+            domain.append(('team_id', '=', self.team_id.id))
+        registers = self.env['sb.attendance.register'].search(domain)
+        rules = self.env['sb.attendance.overtime.rules'].search(
+            [('company_id', '=', self.company_id.id)], limit=1)
+        threshold = rules.weekday_start if rules else 16.5
+        holiday_model = self.env['sb.attendance.public.holiday']
+        entries = {}
+        for reg in registers:
+            day = reg.date
+            category = ('holiday' if holiday_model._is_holiday(day) else
+                        'saturday' if day.weekday() == 5 else
+                        'sunday' if day.weekday() == 6 else 'weekday')
+            for att in reg.line_ids.filtered(lambda line: line.employee_id and line.status == 'present'):
+                if category == 'weekday':
+                    gross_after = max(0.0, att.finish_time - max(att.start_time, threshold))
+                    gross_before = max(0.0, min(att.finish_time, threshold) - att.start_time)
+                    lunch_after = max(0.0, (att.lunch_hours or 0.0) - gross_before)
+                    candidate = max(0.0, gross_after - lunch_after)
+                else:
+                    candidate = max(0.0, att.net_hours or 0.0)
+                if candidate <= 0.0001:
+                    continue
+                key = (att.employee_id.id, day)
+                if key in entries:
+                    # An employee/day should be unique; do not double count
+                    # overlapping registers if legacy data contains duplicates.
+                    continue
+                entries[key] = {'team_id': reg.team_id.id, 'category': category,
+                                'candidate_hours': round(candidate, 2),
+                                'approved_hours': 0.0, 'decision': 'pending',
+                                'rate_multiplier': 2.0 if category == 'sunday' else
+                                1.5 if category in ('weekday', 'saturday') else 0.0}
         teams = {}
-        for item in selected.values():
-            team = teams.setdefault(item.team_id.id, {'days': [{'candidate': 0.0, 'approved': 0.0, 'rate_15': 0.0, 'rate_20': 0.0} for _ in range(7)],
+        for (employee_id, work_date), item in entries.items():
+            team = teams.setdefault(item['team_id'], {
+                'days': [{'candidate': 0.0, 'approved': 0.0, 'rate_15': 0.0, 'rate_20': 0.0}
+                         for _ in range(7)],
                 'categories': {k: {'candidate': 0.0, 'approved': 0.0} for k, _ in categories}})
-            day = (item.work_date - self.date_from).days
-            if not 0 <= day < 7:
-                continue
-            candidate = item.candidate_hours or 0.0
-            approved = item.approved_hours if item.decision == 'approved' else 0.0
-            team['days'][day]['candidate'] += candidate
-            team['days'][day]['approved'] += approved
-            if item.category in ('weekday', 'saturday'):
-                team['days'][day]['rate_15'] += candidate
-            elif item.category == 'sunday':
-                team['days'][day]['rate_20'] += candidate
-            cat = item.category
-            if cat in team['categories']:
-                team['categories'][cat]['candidate'] += candidate
-                team['categories'][cat]['approved'] += approved
+            index = (work_date - self.date_from).days
+            candidate = item['candidate_hours']
+            team['days'][index]['candidate'] += candidate
+            if item['category'] in ('weekday', 'saturday'):
+                team['days'][index]['rate_15'] += candidate
+            elif item['category'] == 'sunday':
+                team['days'][index]['rate_20'] += candidate
+            team['categories'][item['category']]['candidate'] += candidate
         totals = {k: {'candidate': 0.0, 'approved': 0.0} for k, _ in categories}
         for team in teams.values():
             for key in totals:
-                for field in ('candidate', 'approved'):
-                    totals[key][field] += team['categories'][key][field]
-        return {'entries': selected, 'teams': teams, 'totals': totals, 'categories': categories}
+                totals[key]['candidate'] += team['categories'][key]['candidate']
+        return {'entries': entries, 'teams': teams, 'totals': totals, 'categories': categories}
 
     def _overtime_employee_weekly(self, employee_id):
         """Candidate hours by rate; holidays remain separate pending statutory assessment."""
@@ -238,10 +256,10 @@ class WeeklySummary(models.TransientModel):
         for (emp_id, _day), item in self._overtime_report_data()['entries'].items():
             if emp_id != employee_id:
                 continue
-            if item.category in ('weekday', 'saturday'):
-                totals['rate_15'] += item.candidate_hours or 0.0
-            elif item.category == 'sunday':
-                totals['rate_20'] += item.candidate_hours or 0.0
+            if item['category'] in ('weekday', 'saturday'):
+                totals['rate_15'] += item['candidate_hours'] or 0.0
+            elif item['category'] == 'sunday':
+                totals['rate_20'] += item['candidate_hours'] or 0.0
         return totals
 
     def _overtime_cell(self, employee_id, day_index):
@@ -250,9 +268,8 @@ class WeeklySummary(models.TransientModel):
         entry = self._overtime_report_data()['entries'].get((employee_id, day))
         if not entry:
             return False
-        return {'category': entry.category, 'candidate': entry.candidate_hours,
-                'approved': entry.approved_hours if entry.decision == 'approved' else 0.0,
-                'decision': entry.decision, 'rate': entry.rate_multiplier}
+        return {'category': entry['category'], 'candidate': entry['candidate_hours'],
+                'approved': 0.0, 'decision': entry['decision'], 'rate': entry['rate_multiplier']}
 
     def action_download_pdf(self):
         self.ensure_one()
@@ -393,12 +410,12 @@ class WeeklySummary(models.TransientModel):
         otws.write(2, 1, 'Public holiday pay requires statutory assessment; no payroll values calculated.', subtitle)
         for c, name in enumerate(['Team', 'Employee', 'Date', 'Category', 'Rate', 'Candidate h', 'Approved h', 'Decision']):
             otws.write(3, c, name, heading)
-        for r, item in enumerate(sorted(ot['entries'].values(), key=lambda x: (x.team_id.name or '', x.employee_id.name or '', x.work_date)), 4):
-            values = [item.team_id.name or '', item.employee_id.name or '', str(item.work_date),
-                      dict(item._fields['category'].selection).get(item.category, item.category),
-                      item.rate_multiplier, item.candidate_hours,
-                      item.approved_hours if item.decision == 'approved' else 0.0,
-                      dict(item._fields['decision'].selection).get(item.decision, item.decision)]
+        for r, ((employee_id, work_date), item) in enumerate(sorted(
+                ot['entries'].items(), key=lambda pair: (pair[1]['team_id'], pair[0][0], pair[0][1])), 4):
+            values = [self.env['sb.attendance.team'].browse(item['team_id']).name or '',
+                      self.env['hr.employee'].browse(employee_id).name or '', str(work_date),
+                      dict(ot['categories']).get(item['category'], item['category']),
+                      item['rate_multiplier'], item['candidate_hours'], 0.0, 'Pending']
             for c, value in enumerate(values):
                 if isinstance(value, (int, float)):
                     otws.write_number(r, c, value, number)

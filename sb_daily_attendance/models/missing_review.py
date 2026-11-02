@@ -43,8 +43,7 @@ class AttendanceMissingReview(models.TransientModel):
         day = self.date_from
         while day <= self.date_to:
             for team in teams:
-                calendar = team.company_id.resource_calendar_id
-                if calendar and not any(int(a.dayofweek) == day.weekday() for a in calendar.attendance_ids):
+                if not team._expects_register(day):
                     nonworking_days.add((team.id, day))
                     continue
                 members = team._members_on(day)

@@ -81,3 +81,6 @@
 .sb_whatsapp_cutoff {color:#9a520d;background:#fff2dc;border:1px solid #f0cf92;border-radius:8px;padding:7px 10px;font-size:.84rem;font-weight:650;}
 .sb_whatsapp_note {color:#66768a;font-size:.8rem;}
 .sb_whatsapp_copy {font-weight:650;white-space:nowrap;}
+
+.sb_status_not_scheduled .sb_team_header {background:linear-gradient(110deg,#eef1f5,#f8f9fb);}
+.sb_status_not_scheduled .sb_state_pill {background:#e3e7ed;color:#566273;}

@@ -51,8 +51,14 @@ class PublicHoliday(models.Model):
     holiday_date = fields.Date(required=True, index=True)
     name = fields.Char(required=True)
     year = fields.Integer(required=True, index=True)
-    source = fields.Char(default='Nager.Date API', readonly=True)
+    source = fields.Char(default='Manual', readonly=True)
     verified_on = fields.Datetime(readonly=True)
+
+    @api.constrains('holiday_date', 'year')
+    def _check_holiday_year(self):
+        for rec in self:
+            if rec.holiday_date and rec.year != rec.holiday_date.year:
+                raise ValidationError(_('Holiday year must match its date.'))
 
     @api.model
     def _sync_year(self, year):
@@ -69,9 +75,11 @@ class PublicHoliday(models.Model):
                 existing = self.search([('holiday_date', '=', day)], limit=1)
                 vals = {'name': item['localName'], 'year': year, 'verified_on': fields.Datetime.now()}
                 if existing:
-                    existing.write(vals)
+                    if existing.source == 'Manual':
+                        continue  # Preserve manually declared exceptional holidays.
+                    existing.write(dict(vals, source='Nager.Date API'))
                 else:
-                    self.create(dict(vals, holiday_date=day))
+                    self.create(dict(vals, holiday_date=day, source='Nager.Date API'))
         except Exception as exc:
             raise UserError(_('Holiday synchronisation failed for %s: %s. Existing cached dates were preserved. Do not approve unverified holiday classifications.') % (year, exc)) from exc
 

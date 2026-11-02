@@ -104,6 +104,8 @@ class AttendanceSummaryRenderer extends KanbanRenderer {
             const status = d.dashboard_status;
             if (status === "missing") {
                 lines.push(`🔴 *${name}:* Register outstanding`);
+            } else if (status === "not_scheduled") {
+                lines.push(`⚪ *${name}:* Not scheduled`);
             } else {
                 const present = Number(d.dashboard_present || 0);
                 const total = Number(d.dashboard_team_size || 0);

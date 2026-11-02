@@ -27,3 +27,7 @@ access_attendance_distribution_admin,attendance.distribution.admin,sb.attendance
 access_attendance_distribution_log_admin,attendance.distribution.log.admin,sb.attendance.report.distribution.log,group_attendance_admin,cru,"[('company_id','in',company_ids)]"
 access_overtime_rules_admin,overtime.rules.admin,sb.attendance.overtime.rules,group_attendance_admin,crud,"[('company_id','in',company_ids)]"
 access_public_holiday_admin,public.holiday.admin,sb.attendance.public.holiday,group_attendance_admin,cru,
+access_monthly_summary_admin,attendance.monthly.summary.admin,sb.attendance.monthly.summary,group_attendance_admin,crud,
+access_monthly_week_admin,attendance.monthly.week.admin,sb.attendance.monthly.week,group_attendance_admin,crud,
+access_monthly_employee_admin,attendance.monthly.employee.admin,sb.attendance.monthly.employee,group_attendance_admin,crud,
+access_work_expectation_admin,work.expectation.admin,sb.attendance.work.expectation,group_attendance_admin,crud,"[('company_id','in',company_ids)]"

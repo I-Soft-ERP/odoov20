@@ -158,8 +158,6 @@ class AttendanceReminderLog(models.Model):
         config = self.env['sb.attendance.reminder.config'].sudo().search([('company_id', '=', company.id)], limit=1)
         if not config or (not config.enabled and not manual):
             return 0
-        if config.weekdays_only and day.weekday() >= 5 and not manual:
-            return 0
         teams = self.env['sb.attendance.team'].sudo().search([
             ('company_id', '=', company.id), ('active', '=', True)])
         registers = self.env['sb.attendance.register'].sudo().search([
@@ -167,6 +165,8 @@ class AttendanceReminderLog(models.Model):
         state_by_team = {r.team_id.id: r.state for r in registers}
         count = 0
         for team in teams:
+            if not team._expects_register(day):
+                continue
             if state_by_team.get(team.id) in ('submitted', 'final'):
                 continue
             if self.search_count([('team_id', '=', team.id), ('attendance_date', '=', day), ('stage', '=', stage)]):
