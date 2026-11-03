@@ -1,0 +1,20 @@
+<odoo>
+  <record id="view_work_expectation_list" model="ir.ui.view">
+    <field name="name">sb.attendance.work.expectation.list</field>
+    <field name="model">sb.attendance.work.expectation</field>
+    <field name="arch" type="xml"><list editable="bottom"><field name="date"/><field name="team_id"/><field name="reason"/><field name="company_id" optional="hide"/></list></field>
+  </record>
+  <record id="view_work_expectation_form" model="ir.ui.view">
+    <field name="name">sb.attendance.work.expectation.form</field>
+    <field name="model">sb.attendance.work.expectation</field>
+    <field name="arch" type="xml"><form string="Exceptional Work Schedule"><sheet><group><field name="date"/><field name="team_id"/><field name="reason"/><field name="company_id" readonly="1"/></group></sheet></form></field>
+  </record>
+  <record id="action_work_expectation" model="ir.actions.act_window">
+    <field name="name">Weekend / Holiday Work Expected</field>
+    <field name="res_model">sb.attendance.work.expectation</field>
+    <field name="view_mode">list,form</field>
+  </record>
+  <menuitem id="menu_work_expectation" name="Weekend / Holiday Work Expected"
+            parent="menu_attendance_operations" action="action_work_expectation"
+            sequence="5" groups="sb_daily_attendance.group_attendance_admin"/>
+</odoo>

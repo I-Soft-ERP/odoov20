@@ -1,0 +1,44 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+  <record id="action_report_monthly_attendance" model="ir.actions.report">
+    <field name="name">Monthly Attendance and Overtime</field>
+    <field name="model">sb.attendance.monthly.summary</field>
+    <field name="report_type">qweb-pdf</field>
+    <field name="report_name">sb_daily_attendance.report_monthly_attendance_document</field>
+    <field name="paperformat_id" ref="sb_daily_attendance.paperformat_weekly_attendance"/>
+    <field name="print_report_name">'Sambros_Monthly_Attendance_%s_%s' % (object.year, object.month)</field>
+  </record>
+  <template id="report_monthly_attendance_document">
+    <t t-call="web.html_container">
+      <t t-foreach="docs" t-as="doc">
+        <t t-set="company" t-value="doc.company_id"/>
+        <div class="header" style="font-family:Arial,sans-serif;">
+          <table style="width:100%;border-bottom:1px solid #ccd4d9"><tr>
+            <td style="width:50%;"><img t-if="company.logo" t-att-src="image_data_uri(company.logo)" style="max-height:46px;max-width:160px;"/></td>
+            <td style="text-align:right;font-size:10px;color:#24343d;">SAMBROS | MONTHLY ATTENDANCE</td>
+          </tr></table>
+        </div>
+        <div class="page" style="font-family:Arial,sans-serif;font-size:9px;color:#24343d;">
+          <h2 style="background:#24343d;color:white;padding:9px;border-left:5px solid #e43b20;">MONTHLY ATTENDANCE &amp; OVERTIME</h2>
+          <p><strong><span t-out="doc.name"/></strong> | <strong>Period:</strong> <span><span t-out="doc.date_from"/></span> – <span><span t-out="doc.date_to"/></span> | <strong>Team:</strong> <span><span t-out="doc.team_id.name or 'All teams'"/></span></p>
+          <p style="background:#f0f1f2;padding:7px;">Weeks are assigned to the month of their Sunday end date. Pending registers: <strong><span t-out="doc.pending_count"/></strong>. Duplicate employee-days: <strong><span t-out="doc.duplicate_count"/></strong>. Overtime is candidate hours, not payroll approval.</p>
+          <h3 style="background:#24343d;color:white;padding:7px;border-left:4px solid #e43b20;">WEEKLY TEAM SUMMARY</h3>
+          <table style="width:100%;border-collapse:collapse;font-size:9px;" border="1" cellpadding="5">
+            <thead style="background:#e6ebee;"><tr><th>Week starts</th><th>Week ends</th><th>Team</th><th>Present</th><th>Absent</th><th>Attendance %</th><th>OT 1.5x</th><th>OT 2.0x</th><th>Total OT</th></tr></thead>
+            <tbody><tr t-foreach="doc.week_ids" t-as="line">
+              <td><span t-out="line.week_start"/></td><td><span t-out="line.week_end"/></td><td><span t-out="line.team_id.name"/></td><td><span t-out="line.present"/></td><td><span t-out="line.absent"/></td><td><span t-out="'{:.1f}%'.format(line.attendance_rate or 0.0)"/></td><td><span t-out="'%.2f' % line.ot15"/></td><td><span t-out="'%.2f' % line.ot20"/></td><td><span t-out="'%.2f' % line.total_ot"/></td>
+            </tr></tbody>
+          </table>
+          <h3 style="background:#24343d;color:white;padding:7px;border-left:4px solid #e43b20;margin-top:18px;">EMPLOYEE MONTHLY SUMMARY</h3>
+          <table style="width:100%;border-collapse:collapse;font-size:9px;" border="1" cellpadding="5">
+            <thead style="background:#e6ebee;"><tr><th>Team</th><th>Employee</th><th>Present</th><th>Absent</th><th>Auth.</th><th>Prev.</th><th>Attendance %</th><th>Net h</th><th>OT 1.5x</th><th>OT 2.0x</th><th>Total OT</th></tr></thead>
+            <tbody><tr t-foreach="doc.employee_ids" t-as="line">
+              <td><span t-out="line.team_id.name"/></td><td><span t-out="line.employee_id.name"/></td><td><span t-out="line.present"/></td><td><span t-out="line.absent"/></td><td><span t-out="line.authorised"/></td><td><span t-out="line.prevented"/></td><td><span t-out="'{:.1f}%'.format(line.attendance_rate or 0.0)"/></td><td><span t-out="'%.2f' % line.net_hours"/></td><td><span t-out="'%.2f' % line.ot15"/></td><td><span t-out="'%.2f' % line.ot20"/></td><td><span t-out="'%.2f' % line.total_ot"/></td>
+            </tr></tbody>
+          </table>
+          <p style="font-size:8px;color:#59646c;margin-top:12px;">Attendance % = Present / (Present + Absent). Authorised, prevented and unscheduled days are excluded. Public holiday overtime is excluded from the 1.5x and 2.0x categories pending statutory assessment.</p>
+        </div>
+      </t>
+    </t>
+  </template>
+</odoo>

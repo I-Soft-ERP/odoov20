@@ -1,0 +1,37 @@
+<odoo>
+  <record id="view_monthly_summary_form" model="ir.ui.view">
+    <field name="name">sb.attendance.monthly.summary.form</field>
+    <field name="model">sb.attendance.monthly.summary</field>
+    <field name="arch" type="xml">
+      <form string="Monthly Attendance &amp; Overtime" create="0" delete="0">
+        <header>
+          <button name="action_generate" type="object" string="Generate / Refresh" class="btn-primary"/>
+          <button name="action_download_pdf" type="object" string="Download PDF"/>
+          <button name="action_download_xlsx" type="object" string="Export Excel"/>
+        </header>
+        <sheet>
+          <group>
+            <group><field name="month"/><field name="year"/><field name="team_id"/></group>
+            <group><field name="date_from" readonly="1"/><field name="date_to" readonly="1"/><field name="company_id" groups="base.group_multi_company"/></group>
+          </group>
+          <div class="text-muted">Each Monday–Sunday week belongs to the month containing its Sunday. The report includes complete weeks and never duplicates a week across months. Public-holiday overtime remains subject to statutory assessment.</div>
+          <group><field name="pending_count"/><field name="duplicate_count"/></group>
+          <separator string="Weekly Team Summary"/>
+          <field name="week_ids" nolabel="1" readonly="1"><list create="0" edit="0" delete="0">
+            <field name="week_start"/><field name="week_end"/><field name="team_id"/><field name="present" sum="Total"/><field name="absent" sum="Total"/><field name="attendance_rate"/><field name="ot15" sum="Total"/><field name="ot20" sum="Total"/><field name="total_ot" sum="Total"/>
+          </list></field>
+          <separator string="Employee Monthly Summary"/>
+          <field name="employee_ids" nolabel="1" readonly="1"><list create="0" edit="0" delete="0">
+            <field name="team_id"/><field name="employee_id"/><field name="present" sum="Total"/><field name="absent" sum="Total"/><field name="authorised"/><field name="prevented"/><field name="attendance_rate"/><field name="net_hours" sum="Total"/><field name="ot15" sum="Total"/><field name="ot20" sum="Total"/><field name="total_ot" sum="Total"/>
+          </list></field>
+        </sheet>
+      </form>
+    </field>
+  </record>
+  <record id="action_monthly_summary" model="ir.actions.act_window">
+    <field name="name">Monthly Attendance &amp; Overtime</field>
+    <field name="res_model">sb.attendance.monthly.summary</field>
+    <field name="view_mode">form</field><field name="target">current</field>
+  </record>
+  <menuitem id="menu_monthly_summary" name="Monthly Attendance &amp; Overtime" parent="menu_attendance_reports" action="action_monthly_summary" sequence="26" groups="sb_daily_attendance.group_attendance_admin"/>
+</odoo>
