@@ -46,7 +46,7 @@ class PublicHoliday(models.Model):
     _name = 'sb.attendance.public.holiday'
     _description = 'Automatically Retrieved South African Public Holiday'
     _order = 'holiday_date'
-    _sql_constraints = [('unique_holiday_date', 'unique(holiday_date)', 'Holiday date must be unique.')]
+    _unique_holiday_date = models.Constraint('UNIQUE(holiday_date)', 'Holiday date must be unique.')
 
     holiday_date = fields.Date(required=True, index=True)
     name = fields.Char(required=True)

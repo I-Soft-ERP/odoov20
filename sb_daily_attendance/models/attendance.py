@@ -203,7 +203,7 @@ class Register(models.Model):
     submitted_at=fields.Datetime(readonly=True)
     finalised_by=fields.Many2one('res.users',readonly=True)
     finalised_at=fields.Datetime(readonly=True)
-    _sql_constraints=[('unique_team_date','unique(team_id,date,company_id)','A register already exists for this team and date.')]
+    _unique_team_date = models.Constraint('UNIQUE(team_id, date, company_id)', 'A register already exists for this team and date.')
 
     @api.model
     def _default_hour(self,key,fallback):
@@ -489,7 +489,7 @@ class Line(models.Model):
             if line.break_override_hours < 0 or line.break_override_hours > 24:
                 raise ValidationError(_('Actual unpaid break must be between 0 and 24 hours.'))
 
-    _sql_constraints=[('unique_employee_register','unique(register_id,employee_id)','An employee may only appear once per register.')]
+    _unique_employee_register = models.Constraint('UNIQUE(register_id, employee_id)', 'An employee may only appear once per register.')
 
     def _check_unique_daily_employee(self):
         # A single attendance status is recorded per employee/day, irrespective

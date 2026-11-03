@@ -12,7 +12,7 @@ class AttendanceReminderConfig(models.Model):
     _name = 'sb.attendance.reminder.config'
     _description = 'Attendance Reminder Configuration'
     _rec_name = 'company_id'
-    _sql_constraints = [('company_unique', 'unique(company_id)', 'Only one attendance reminder configuration is allowed per company.')]
+    _company_unique = models.Constraint('UNIQUE(company_id)', 'Only one attendance reminder configuration is allowed per company.')
 
     company_id = fields.Many2one('res.company', required=True, default=lambda s: s.env.company)
     enabled = fields.Boolean(default=False, help='Enable automatic reminders once recipients have been configured and tested.')
@@ -77,8 +77,7 @@ class AttendanceReminderLog(models.Model):
     _name = 'sb.attendance.reminder.log'
     _description = 'Attendance Reminder Notification History'
     _order = 'sent_at desc, id desc'
-    _sql_constraints = [('unique_stage', 'unique(team_id, attendance_date, stage)',
-                         'This team/date/stage notification has already been recorded.')]
+    _unique_stage = models.Constraint('UNIQUE(team_id, attendance_date, stage)', 'This team/date/stage notification has already been recorded.')
 
     company_id = fields.Many2one('res.company', required=True, readonly=True)
     team_id = fields.Many2one('sb.attendance.team', required=True, readonly=True)

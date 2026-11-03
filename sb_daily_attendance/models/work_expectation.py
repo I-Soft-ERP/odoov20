@@ -6,10 +6,7 @@ class AttendanceWorkExpectation(models.Model):
     _name = 'sb.attendance.work.expectation'
     _description = 'Exceptional Team Work Expectation'
     _order = 'date desc, team_id'
-    _sql_constraints = [
-        ('unique_team_work_date', 'unique(team_id, date)',
-         'This team already has a work expectation for the selected date.'),
-    ]
+    _unique_team_work_date = models.Constraint('UNIQUE(team_id, date)', 'This team already has a work expectation for the selected date.')
 
     date = fields.Date(required=True, default=fields.Date.context_today, index=True)
     team_id = fields.Many2one('sb.attendance.team', required=True, ondelete='cascade', index=True)

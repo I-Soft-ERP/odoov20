@@ -23,7 +23,7 @@ class AttendanceSickLeave(models.Model):
         if self.env.context.get('sb_skip_sick_sync'):
             return
 
-        Leave = self.env['hr.leave'].sudo() if 'hr.leave' in self.env.registry.models else False
+        Leave = self.env['hr.leave'].sudo()
         for line in self:
             def update(values):
                 line.with_context(sb_skip_sick_sync=True).sudo().write(values)
@@ -36,13 +36,6 @@ class AttendanceSickLeave(models.Model):
                     })
                 else:
                     update({'sick_sync_state': 'none', 'sick_sync_note': False})
-                continue
-
-            if not Leave:
-                update({
-                    'sick_sync_state': 'review',
-                    'sick_sync_note': _('Time Off is unavailable; HR must review this absence.'),
-                })
                 continue
 
             day = line.register_id.date
